@@ -37,6 +37,8 @@
 #include "vn_protocol_renderer_command_pool.h"
 #include "vn_protocol_renderer_command_buffer.h"
 #include "vn_protocol_renderer_private_data_slot.h"
+#include "vn_protocol_renderer_host_copy.h"
+#include "vn_protocol_renderer_acceleration_structure.h"
 
 static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
 {
@@ -125,7 +127,7 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkCreateRenderPass_EXT: return "vkCreateRenderPass";
     case VK_COMMAND_TYPE_vkDestroyRenderPass_EXT: return "vkDestroyRenderPass";
     case VK_COMMAND_TYPE_vkGetRenderAreaGranularity_EXT: return "vkGetRenderAreaGranularity";
-    case VK_COMMAND_TYPE_vkGetRenderingAreaGranularityKHR_EXT: return "vkGetRenderingAreaGranularityKHR";
+    case VK_COMMAND_TYPE_vkGetRenderingAreaGranularity_EXT: return "vkGetRenderingAreaGranularity";
     case VK_COMMAND_TYPE_vkCreateCommandPool_EXT: return "vkCreateCommandPool";
     case VK_COMMAND_TYPE_vkDestroyCommandPool_EXT: return "vkDestroyCommandPool";
     case VK_COMMAND_TYPE_vkResetCommandPool_EXT: return "vkResetCommandPool";
@@ -135,6 +137,7 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkEndCommandBuffer_EXT: return "vkEndCommandBuffer";
     case VK_COMMAND_TYPE_vkResetCommandBuffer_EXT: return "vkResetCommandBuffer";
     case VK_COMMAND_TYPE_vkCmdBindPipeline_EXT: return "vkCmdBindPipeline";
+    case VK_COMMAND_TYPE_vkCmdSetAttachmentFeedbackLoopEnableEXT_EXT: return "vkCmdSetAttachmentFeedbackLoopEnableEXT";
     case VK_COMMAND_TYPE_vkCmdSetViewport_EXT: return "vkCmdSetViewport";
     case VK_COMMAND_TYPE_vkCmdSetScissor_EXT: return "vkCmdSetScissor";
     case VK_COMMAND_TYPE_vkCmdSetLineWidth_EXT: return "vkCmdSetLineWidth";
@@ -189,7 +192,7 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceQueueFamilyProperties2_EXT: return "vkGetPhysicalDeviceQueueFamilyProperties2";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceMemoryProperties2_EXT: return "vkGetPhysicalDeviceMemoryProperties2";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceSparseImageFormatProperties2_EXT: return "vkGetPhysicalDeviceSparseImageFormatProperties2";
-    case VK_COMMAND_TYPE_vkCmdPushDescriptorSetKHR_EXT: return "vkCmdPushDescriptorSetKHR";
+    case VK_COMMAND_TYPE_vkCmdPushDescriptorSet_EXT: return "vkCmdPushDescriptorSet";
     case VK_COMMAND_TYPE_vkTrimCommandPool_EXT: return "vkTrimCommandPool";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceExternalBufferProperties_EXT: return "vkGetPhysicalDeviceExternalBufferProperties";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceExternalSemaphoreProperties_EXT: return "vkGetPhysicalDeviceExternalSemaphoreProperties";
@@ -202,6 +205,8 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkCmdDispatchBase_EXT: return "vkCmdDispatchBase";
     case VK_COMMAND_TYPE_vkCreateDescriptorUpdateTemplate_EXT: return "vkCreateDescriptorUpdateTemplate";
     case VK_COMMAND_TYPE_vkDestroyDescriptorUpdateTemplate_EXT: return "vkDestroyDescriptorUpdateTemplate";
+    case VK_COMMAND_TYPE_vkCmdSetSampleLocationsEXT_EXT: return "vkCmdSetSampleLocationsEXT";
+    case VK_COMMAND_TYPE_vkGetPhysicalDeviceMultisamplePropertiesEXT_EXT: return "vkGetPhysicalDeviceMultisamplePropertiesEXT";
     case VK_COMMAND_TYPE_vkGetBufferMemoryRequirements2_EXT: return "vkGetBufferMemoryRequirements2";
     case VK_COMMAND_TYPE_vkGetImageMemoryRequirements2_EXT: return "vkGetImageMemoryRequirements2";
     case VK_COMMAND_TYPE_vkGetImageSparseMemoryRequirements2_EXT: return "vkGetImageSparseMemoryRequirements2";
@@ -212,8 +217,8 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkDestroySamplerYcbcrConversion_EXT: return "vkDestroySamplerYcbcrConversion";
     case VK_COMMAND_TYPE_vkGetDeviceQueue2_EXT: return "vkGetDeviceQueue2";
     case VK_COMMAND_TYPE_vkGetDescriptorSetLayoutSupport_EXT: return "vkGetDescriptorSetLayoutSupport";
-    case VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT_EXT: return "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT";
-    case VK_COMMAND_TYPE_vkGetCalibratedTimestampsEXT_EXT: return "vkGetCalibratedTimestampsEXT";
+    case VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR_EXT: return "vkGetPhysicalDeviceCalibrateableTimeDomainsKHR";
+    case VK_COMMAND_TYPE_vkGetCalibratedTimestampsKHR_EXT: return "vkGetCalibratedTimestampsKHR";
     case VK_COMMAND_TYPE_vkCreateRenderPass2_EXT: return "vkCreateRenderPass2";
     case VK_COMMAND_TYPE_vkCmdBeginRenderPass2_EXT: return "vkCmdBeginRenderPass2";
     case VK_COMMAND_TYPE_vkCmdNextSubpass2_EXT: return "vkCmdNextSubpass2";
@@ -229,18 +234,46 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkCmdBeginQueryIndexedEXT_EXT: return "vkCmdBeginQueryIndexedEXT";
     case VK_COMMAND_TYPE_vkCmdEndQueryIndexedEXT_EXT: return "vkCmdEndQueryIndexedEXT";
     case VK_COMMAND_TYPE_vkCmdDrawIndirectByteCountEXT_EXT: return "vkCmdDrawIndirectByteCountEXT";
+    case VK_COMMAND_TYPE_vkCmdDrawMeshTasksEXT_EXT: return "vkCmdDrawMeshTasksEXT";
+    case VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectEXT_EXT: return "vkCmdDrawMeshTasksIndirectEXT";
+    case VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectCountEXT_EXT: return "vkCmdDrawMeshTasksIndirectCountEXT";
+    case VK_COMMAND_TYPE_vkDestroyAccelerationStructureKHR_EXT: return "vkDestroyAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT: return "vkCmdCopyAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkCopyAccelerationStructureKHR_EXT: return "vkCopyAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT: return "vkCmdCopyAccelerationStructureToMemoryKHR";
+    case VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT: return "vkCmdCopyMemoryToAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT: return "vkCmdWriteAccelerationStructuresPropertiesKHR";
+    case VK_COMMAND_TYPE_vkWriteAccelerationStructuresPropertiesKHR_EXT: return "vkWriteAccelerationStructuresPropertiesKHR";
+    case VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT: return "vkCmdTraceRaysKHR";
+    case VK_COMMAND_TYPE_vkGetRayTracingShaderGroupHandlesKHR_EXT: return "vkGetRayTracingShaderGroupHandlesKHR";
+    case VK_COMMAND_TYPE_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR_EXT: return "vkGetRayTracingCaptureReplayShaderGroupHandlesKHR";
+    case VK_COMMAND_TYPE_vkCreateRayTracingPipelinesKHR_EXT: return "vkCreateRayTracingPipelinesKHR";
+    case VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT: return "vkCmdTraceRaysIndirectKHR";
+    case VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT: return "vkCmdTraceRaysIndirect2KHR";
+    case VK_COMMAND_TYPE_vkGetDeviceAccelerationStructureCompatibilityKHR_EXT: return "vkGetDeviceAccelerationStructureCompatibilityKHR";
+    case VK_COMMAND_TYPE_vkGetRayTracingShaderGroupStackSizeKHR_EXT: return "vkGetRayTracingShaderGroupStackSizeKHR";
+    case VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT: return "vkCmdSetRayTracingPipelineStackSizeKHR";
     case VK_COMMAND_TYPE_vkGetImageDrmFormatModifierPropertiesEXT_EXT: return "vkGetImageDrmFormatModifierPropertiesEXT";
     case VK_COMMAND_TYPE_vkGetBufferOpaqueCaptureAddress_EXT: return "vkGetBufferOpaqueCaptureAddress";
     case VK_COMMAND_TYPE_vkGetBufferDeviceAddress_EXT: return "vkGetBufferDeviceAddress";
     case VK_COMMAND_TYPE_vkGetDeviceMemoryOpaqueCaptureAddress_EXT: return "vkGetDeviceMemoryOpaqueCaptureAddress";
-    case VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT: return "vkCmdSetLineStippleEXT";
+    case VK_COMMAND_TYPE_vkCmdSetLineStipple_EXT: return "vkCmdSetLineStipple";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceToolProperties_EXT: return "vkGetPhysicalDeviceToolProperties";
+    case VK_COMMAND_TYPE_vkCreateAccelerationStructureKHR_EXT: return "vkCreateAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT: return "vkCmdBuildAccelerationStructuresKHR";
+    case VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT: return "vkCmdBuildAccelerationStructuresIndirectKHR";
+    case VK_COMMAND_TYPE_vkGetAccelerationStructureDeviceAddressKHR_EXT: return "vkGetAccelerationStructureDeviceAddressKHR";
+    case VK_COMMAND_TYPE_vkCreateDeferredOperationKHR_EXT: return "vkCreateDeferredOperationKHR";
+    case VK_COMMAND_TYPE_vkDestroyDeferredOperationKHR_EXT: return "vkDestroyDeferredOperationKHR";
+    case VK_COMMAND_TYPE_vkGetDeferredOperationMaxConcurrencyKHR_EXT: return "vkGetDeferredOperationMaxConcurrencyKHR";
+    case VK_COMMAND_TYPE_vkGetDeferredOperationResultKHR_EXT: return "vkGetDeferredOperationResultKHR";
+    case VK_COMMAND_TYPE_vkDeferredOperationJoinKHR_EXT: return "vkDeferredOperationJoinKHR";
     case VK_COMMAND_TYPE_vkCmdSetCullMode_EXT: return "vkCmdSetCullMode";
     case VK_COMMAND_TYPE_vkCmdSetFrontFace_EXT: return "vkCmdSetFrontFace";
     case VK_COMMAND_TYPE_vkCmdSetPrimitiveTopology_EXT: return "vkCmdSetPrimitiveTopology";
     case VK_COMMAND_TYPE_vkCmdSetViewportWithCount_EXT: return "vkCmdSetViewportWithCount";
     case VK_COMMAND_TYPE_vkCmdSetScissorWithCount_EXT: return "vkCmdSetScissorWithCount";
-    case VK_COMMAND_TYPE_vkCmdBindIndexBuffer2KHR_EXT: return "vkCmdBindIndexBuffer2KHR";
+    case VK_COMMAND_TYPE_vkCmdBindIndexBuffer2_EXT: return "vkCmdBindIndexBuffer2";
     case VK_COMMAND_TYPE_vkCmdBindVertexBuffers2_EXT: return "vkCmdBindVertexBuffers2";
     case VK_COMMAND_TYPE_vkCmdSetDepthTestEnable_EXT: return "vkCmdSetDepthTestEnable";
     case VK_COMMAND_TYPE_vkCmdSetDepthWriteEnable_EXT: return "vkCmdSetDepthWriteEnable";
@@ -286,6 +319,7 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkCmdResolveImage2_EXT: return "vkCmdResolveImage2";
     case VK_COMMAND_TYPE_vkCmdSetFragmentShadingRateKHR_EXT: return "vkCmdSetFragmentShadingRateKHR";
     case VK_COMMAND_TYPE_vkGetPhysicalDeviceFragmentShadingRatesKHR_EXT: return "vkGetPhysicalDeviceFragmentShadingRatesKHR";
+    case VK_COMMAND_TYPE_vkGetAccelerationStructureBuildSizesKHR_EXT: return "vkGetAccelerationStructureBuildSizesKHR";
     case VK_COMMAND_TYPE_vkCmdSetVertexInputEXT_EXT: return "vkCmdSetVertexInputEXT";
     case VK_COMMAND_TYPE_vkCmdSetColorWriteEnableEXT_EXT: return "vkCmdSetColorWriteEnableEXT";
     case VK_COMMAND_TYPE_vkCmdSetEvent2_EXT: return "vkCmdSetEvent2";
@@ -294,10 +328,21 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkCmdPipelineBarrier2_EXT: return "vkCmdPipelineBarrier2";
     case VK_COMMAND_TYPE_vkQueueSubmit2_EXT: return "vkQueueSubmit2";
     case VK_COMMAND_TYPE_vkCmdWriteTimestamp2_EXT: return "vkCmdWriteTimestamp2";
+    case VK_COMMAND_TYPE_vkCopyImageToImage_EXT: return "vkCopyImageToImage";
+    case VK_COMMAND_TYPE_vkTransitionImageLayout_EXT: return "vkTransitionImageLayout";
     case VK_COMMAND_TYPE_vkCmdBeginRendering_EXT: return "vkCmdBeginRendering";
     case VK_COMMAND_TYPE_vkCmdEndRendering_EXT: return "vkCmdEndRendering";
-    case VK_COMMAND_TYPE_vkGetImageSubresourceLayout2KHR_EXT: return "vkGetImageSubresourceLayout2KHR";
-    case VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayoutKHR_EXT: return "vkGetDeviceImageSubresourceLayoutKHR";
+    case VK_COMMAND_TYPE_vkGetImageSubresourceLayout2_EXT: return "vkGetImageSubresourceLayout2";
+    case VK_COMMAND_TYPE_vkCmdSetDepthBias2EXT_EXT: return "vkCmdSetDepthBias2EXT";
+    case VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayout_EXT: return "vkGetDeviceImageSubresourceLayout";
+    case VK_COMMAND_TYPE_vkUnmapMemory2_EXT: return "vkUnmapMemory2";
+    case VK_COMMAND_TYPE_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR_EXT: return "vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR";
+    case VK_COMMAND_TYPE_vkCmdBindDescriptorSets2_EXT: return "vkCmdBindDescriptorSets2";
+    case VK_COMMAND_TYPE_vkCmdPushConstants2_EXT: return "vkCmdPushConstants2";
+    case VK_COMMAND_TYPE_vkCmdPushDescriptorSet2_EXT: return "vkCmdPushDescriptorSet2";
+    case VK_COMMAND_TYPE_vkCmdSetRenderingAttachmentLocations_EXT: return "vkCmdSetRenderingAttachmentLocations";
+    case VK_COMMAND_TYPE_vkCmdSetRenderingInputAttachmentIndices_EXT: return "vkCmdSetRenderingInputAttachmentIndices";
+    case VK_COMMAND_TYPE_vkCmdSetDepthClampRangeEXT_EXT: return "vkCmdSetDepthClampRangeEXT";
     case VK_COMMAND_TYPE_vkSetReplyCommandStreamMESA_EXT: return "vkSetReplyCommandStreamMESA";
     case VK_COMMAND_TYPE_vkSeekReplyCommandStreamMESA_EXT: return "vkSeekReplyCommandStreamMESA";
     case VK_COMMAND_TYPE_vkExecuteCommandStreamsMESA_EXT: return "vkExecuteCommandStreamsMESA";
@@ -312,6 +357,8 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkSubmitVirtqueueSeqnoMESA_EXT: return "vkSubmitVirtqueueSeqnoMESA";
     case VK_COMMAND_TYPE_vkWaitVirtqueueSeqnoMESA_EXT: return "vkWaitVirtqueueSeqnoMESA";
     case VK_COMMAND_TYPE_vkWaitRingSeqnoMESA_EXT: return "vkWaitRingSeqnoMESA";
+    case VK_COMMAND_TYPE_vkCopyImageToMemoryMESA_EXT: return "vkCopyImageToMemoryMESA";
+    case VK_COMMAND_TYPE_vkCopyMemoryToImageMESA_EXT: return "vkCopyMemoryToImageMESA";
     case VK_COMMAND_TYPE_vkGetDeviceProcAddr_EXT: return "vkGetDeviceProcAddr";
     case VK_COMMAND_TYPE_vkGetInstanceProcAddr_EXT: return "vkGetInstanceProcAddr";
     case VK_COMMAND_TYPE_vkMapMemory_EXT: return "vkMapMemory";
@@ -322,12 +369,19 @@ static inline const char *vn_dispatch_command_name(VkCommandTypeEXT type)
     case VK_COMMAND_TYPE_vkGetFenceFdKHR_EXT: return "vkGetFenceFdKHR";
     case VK_COMMAND_TYPE_vkImportFenceFdKHR_EXT: return "vkImportFenceFdKHR";
     case VK_COMMAND_TYPE_vkUpdateDescriptorSetWithTemplate_EXT: return "vkUpdateDescriptorSetWithTemplate";
-    case VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplateKHR_EXT: return "vkCmdPushDescriptorSetWithTemplateKHR";
+    case VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplate_EXT: return "vkCmdPushDescriptorSetWithTemplate";
+    case VK_COMMAND_TYPE_vkCopyAccelerationStructureToMemoryKHR_EXT: return "vkCopyAccelerationStructureToMemoryKHR";
+    case VK_COMMAND_TYPE_vkCopyMemoryToAccelerationStructureKHR_EXT: return "vkCopyMemoryToAccelerationStructureKHR";
+    case VK_COMMAND_TYPE_vkBuildAccelerationStructuresKHR_EXT: return "vkBuildAccelerationStructuresKHR";
+    case VK_COMMAND_TYPE_vkCopyMemoryToImage_EXT: return "vkCopyMemoryToImage";
+    case VK_COMMAND_TYPE_vkCopyImageToMemory_EXT: return "vkCopyImageToMemory";
+    case VK_COMMAND_TYPE_vkMapMemory2_EXT: return "vkMapMemory2";
+    case VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplate2_EXT: return "vkCmdPushDescriptorSetWithTemplate2";
     default: return "unknown";
     }
 }
 
-static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkCommandFlagsEXT flags) = {
+static void (*const vn_dispatch_table[335])(struct vn_dispatch_context *ctx, VkCommandFlagsEXT flags) = {
     [VK_COMMAND_TYPE_vkCreateInstance_EXT] = vn_dispatch_vkCreateInstance,
     [VK_COMMAND_TYPE_vkDestroyInstance_EXT] = vn_dispatch_vkDestroyInstance,
     [VK_COMMAND_TYPE_vkEnumeratePhysicalDevices_EXT] = vn_dispatch_vkEnumeratePhysicalDevices,
@@ -412,7 +466,7 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkCreateRenderPass_EXT] = vn_dispatch_vkCreateRenderPass,
     [VK_COMMAND_TYPE_vkDestroyRenderPass_EXT] = vn_dispatch_vkDestroyRenderPass,
     [VK_COMMAND_TYPE_vkGetRenderAreaGranularity_EXT] = vn_dispatch_vkGetRenderAreaGranularity,
-    [VK_COMMAND_TYPE_vkGetRenderingAreaGranularityKHR_EXT] = vn_dispatch_vkGetRenderingAreaGranularityKHR,
+    [VK_COMMAND_TYPE_vkGetRenderingAreaGranularity_EXT] = vn_dispatch_vkGetRenderingAreaGranularity,
     [VK_COMMAND_TYPE_vkCreateCommandPool_EXT] = vn_dispatch_vkCreateCommandPool,
     [VK_COMMAND_TYPE_vkDestroyCommandPool_EXT] = vn_dispatch_vkDestroyCommandPool,
     [VK_COMMAND_TYPE_vkResetCommandPool_EXT] = vn_dispatch_vkResetCommandPool,
@@ -422,6 +476,7 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkEndCommandBuffer_EXT] = vn_dispatch_vkEndCommandBuffer,
     [VK_COMMAND_TYPE_vkResetCommandBuffer_EXT] = vn_dispatch_vkResetCommandBuffer,
     [VK_COMMAND_TYPE_vkCmdBindPipeline_EXT] = vn_dispatch_vkCmdBindPipeline,
+    [VK_COMMAND_TYPE_vkCmdSetAttachmentFeedbackLoopEnableEXT_EXT] = vn_dispatch_vkCmdSetAttachmentFeedbackLoopEnableEXT,
     [VK_COMMAND_TYPE_vkCmdSetViewport_EXT] = vn_dispatch_vkCmdSetViewport,
     [VK_COMMAND_TYPE_vkCmdSetScissor_EXT] = vn_dispatch_vkCmdSetScissor,
     [VK_COMMAND_TYPE_vkCmdSetLineWidth_EXT] = vn_dispatch_vkCmdSetLineWidth,
@@ -476,7 +531,7 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceQueueFamilyProperties2_EXT] = vn_dispatch_vkGetPhysicalDeviceQueueFamilyProperties2,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceMemoryProperties2_EXT] = vn_dispatch_vkGetPhysicalDeviceMemoryProperties2,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceSparseImageFormatProperties2_EXT] = vn_dispatch_vkGetPhysicalDeviceSparseImageFormatProperties2,
-    [VK_COMMAND_TYPE_vkCmdPushDescriptorSetKHR_EXT] = vn_dispatch_vkCmdPushDescriptorSetKHR,
+    [VK_COMMAND_TYPE_vkCmdPushDescriptorSet_EXT] = vn_dispatch_vkCmdPushDescriptorSet,
     [VK_COMMAND_TYPE_vkTrimCommandPool_EXT] = vn_dispatch_vkTrimCommandPool,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceExternalBufferProperties_EXT] = vn_dispatch_vkGetPhysicalDeviceExternalBufferProperties,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceExternalSemaphoreProperties_EXT] = vn_dispatch_vkGetPhysicalDeviceExternalSemaphoreProperties,
@@ -489,6 +544,8 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkCmdDispatchBase_EXT] = vn_dispatch_vkCmdDispatchBase,
     [VK_COMMAND_TYPE_vkCreateDescriptorUpdateTemplate_EXT] = vn_dispatch_vkCreateDescriptorUpdateTemplate,
     [VK_COMMAND_TYPE_vkDestroyDescriptorUpdateTemplate_EXT] = vn_dispatch_vkDestroyDescriptorUpdateTemplate,
+    [VK_COMMAND_TYPE_vkCmdSetSampleLocationsEXT_EXT] = vn_dispatch_vkCmdSetSampleLocationsEXT,
+    [VK_COMMAND_TYPE_vkGetPhysicalDeviceMultisamplePropertiesEXT_EXT] = vn_dispatch_vkGetPhysicalDeviceMultisamplePropertiesEXT,
     [VK_COMMAND_TYPE_vkGetBufferMemoryRequirements2_EXT] = vn_dispatch_vkGetBufferMemoryRequirements2,
     [VK_COMMAND_TYPE_vkGetImageMemoryRequirements2_EXT] = vn_dispatch_vkGetImageMemoryRequirements2,
     [VK_COMMAND_TYPE_vkGetImageSparseMemoryRequirements2_EXT] = vn_dispatch_vkGetImageSparseMemoryRequirements2,
@@ -499,8 +556,8 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkDestroySamplerYcbcrConversion_EXT] = vn_dispatch_vkDestroySamplerYcbcrConversion,
     [VK_COMMAND_TYPE_vkGetDeviceQueue2_EXT] = vn_dispatch_vkGetDeviceQueue2,
     [VK_COMMAND_TYPE_vkGetDescriptorSetLayoutSupport_EXT] = vn_dispatch_vkGetDescriptorSetLayoutSupport,
-    [VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT_EXT] = vn_dispatch_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
-    [VK_COMMAND_TYPE_vkGetCalibratedTimestampsEXT_EXT] = vn_dispatch_vkGetCalibratedTimestampsEXT,
+    [VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR_EXT] = vn_dispatch_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR,
+    [VK_COMMAND_TYPE_vkGetCalibratedTimestampsKHR_EXT] = vn_dispatch_vkGetCalibratedTimestampsKHR,
     [VK_COMMAND_TYPE_vkCreateRenderPass2_EXT] = vn_dispatch_vkCreateRenderPass2,
     [VK_COMMAND_TYPE_vkCmdBeginRenderPass2_EXT] = vn_dispatch_vkCmdBeginRenderPass2,
     [VK_COMMAND_TYPE_vkCmdNextSubpass2_EXT] = vn_dispatch_vkCmdNextSubpass2,
@@ -516,18 +573,46 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkCmdBeginQueryIndexedEXT_EXT] = vn_dispatch_vkCmdBeginQueryIndexedEXT,
     [VK_COMMAND_TYPE_vkCmdEndQueryIndexedEXT_EXT] = vn_dispatch_vkCmdEndQueryIndexedEXT,
     [VK_COMMAND_TYPE_vkCmdDrawIndirectByteCountEXT_EXT] = vn_dispatch_vkCmdDrawIndirectByteCountEXT,
+    [VK_COMMAND_TYPE_vkCmdDrawMeshTasksEXT_EXT] = vn_dispatch_vkCmdDrawMeshTasksEXT,
+    [VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectEXT_EXT] = vn_dispatch_vkCmdDrawMeshTasksIndirectEXT,
+    [VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectCountEXT_EXT] = vn_dispatch_vkCmdDrawMeshTasksIndirectCountEXT,
+    [VK_COMMAND_TYPE_vkDestroyAccelerationStructureKHR_EXT] = vn_dispatch_vkDestroyAccelerationStructureKHR,
+    [VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT] = vn_dispatch_vkCmdCopyAccelerationStructureKHR,
+    [VK_COMMAND_TYPE_vkCopyAccelerationStructureKHR_EXT] = vn_dispatch_vkCopyAccelerationStructureKHR,
+    [VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT] = vn_dispatch_vkCmdCopyAccelerationStructureToMemoryKHR,
+    [VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT] = vn_dispatch_vkCmdCopyMemoryToAccelerationStructureKHR,
+    [VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT] = vn_dispatch_vkCmdWriteAccelerationStructuresPropertiesKHR,
+    [VK_COMMAND_TYPE_vkWriteAccelerationStructuresPropertiesKHR_EXT] = vn_dispatch_vkWriteAccelerationStructuresPropertiesKHR,
+    [VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT] = vn_dispatch_vkCmdTraceRaysKHR,
+    [VK_COMMAND_TYPE_vkGetRayTracingShaderGroupHandlesKHR_EXT] = vn_dispatch_vkGetRayTracingShaderGroupHandlesKHR,
+    [VK_COMMAND_TYPE_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR_EXT] = vn_dispatch_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR,
+    [VK_COMMAND_TYPE_vkCreateRayTracingPipelinesKHR_EXT] = vn_dispatch_vkCreateRayTracingPipelinesKHR,
+    [VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT] = vn_dispatch_vkCmdTraceRaysIndirectKHR,
+    [VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT] = vn_dispatch_vkCmdTraceRaysIndirect2KHR,
+    [VK_COMMAND_TYPE_vkGetDeviceAccelerationStructureCompatibilityKHR_EXT] = vn_dispatch_vkGetDeviceAccelerationStructureCompatibilityKHR,
+    [VK_COMMAND_TYPE_vkGetRayTracingShaderGroupStackSizeKHR_EXT] = vn_dispatch_vkGetRayTracingShaderGroupStackSizeKHR,
+    [VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT] = vn_dispatch_vkCmdSetRayTracingPipelineStackSizeKHR,
     [VK_COMMAND_TYPE_vkGetImageDrmFormatModifierPropertiesEXT_EXT] = vn_dispatch_vkGetImageDrmFormatModifierPropertiesEXT,
     [VK_COMMAND_TYPE_vkGetBufferOpaqueCaptureAddress_EXT] = vn_dispatch_vkGetBufferOpaqueCaptureAddress,
     [VK_COMMAND_TYPE_vkGetBufferDeviceAddress_EXT] = vn_dispatch_vkGetBufferDeviceAddress,
     [VK_COMMAND_TYPE_vkGetDeviceMemoryOpaqueCaptureAddress_EXT] = vn_dispatch_vkGetDeviceMemoryOpaqueCaptureAddress,
-    [VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT] = vn_dispatch_vkCmdSetLineStippleEXT,
+    [VK_COMMAND_TYPE_vkCmdSetLineStipple_EXT] = vn_dispatch_vkCmdSetLineStipple,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceToolProperties_EXT] = vn_dispatch_vkGetPhysicalDeviceToolProperties,
+    [VK_COMMAND_TYPE_vkCreateAccelerationStructureKHR_EXT] = vn_dispatch_vkCreateAccelerationStructureKHR,
+    [VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT] = vn_dispatch_vkCmdBuildAccelerationStructuresKHR,
+    [VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT] = vn_dispatch_vkCmdBuildAccelerationStructuresIndirectKHR,
+    [VK_COMMAND_TYPE_vkGetAccelerationStructureDeviceAddressKHR_EXT] = vn_dispatch_vkGetAccelerationStructureDeviceAddressKHR,
+    [VK_COMMAND_TYPE_vkCreateDeferredOperationKHR_EXT] = vn_dispatch_vkCreateDeferredOperationKHR,
+    [VK_COMMAND_TYPE_vkDestroyDeferredOperationKHR_EXT] = vn_dispatch_vkDestroyDeferredOperationKHR,
+    [VK_COMMAND_TYPE_vkGetDeferredOperationMaxConcurrencyKHR_EXT] = vn_dispatch_vkGetDeferredOperationMaxConcurrencyKHR,
+    [VK_COMMAND_TYPE_vkGetDeferredOperationResultKHR_EXT] = vn_dispatch_vkGetDeferredOperationResultKHR,
+    [VK_COMMAND_TYPE_vkDeferredOperationJoinKHR_EXT] = vn_dispatch_vkDeferredOperationJoinKHR,
     [VK_COMMAND_TYPE_vkCmdSetCullMode_EXT] = vn_dispatch_vkCmdSetCullMode,
     [VK_COMMAND_TYPE_vkCmdSetFrontFace_EXT] = vn_dispatch_vkCmdSetFrontFace,
     [VK_COMMAND_TYPE_vkCmdSetPrimitiveTopology_EXT] = vn_dispatch_vkCmdSetPrimitiveTopology,
     [VK_COMMAND_TYPE_vkCmdSetViewportWithCount_EXT] = vn_dispatch_vkCmdSetViewportWithCount,
     [VK_COMMAND_TYPE_vkCmdSetScissorWithCount_EXT] = vn_dispatch_vkCmdSetScissorWithCount,
-    [VK_COMMAND_TYPE_vkCmdBindIndexBuffer2KHR_EXT] = vn_dispatch_vkCmdBindIndexBuffer2KHR,
+    [VK_COMMAND_TYPE_vkCmdBindIndexBuffer2_EXT] = vn_dispatch_vkCmdBindIndexBuffer2,
     [VK_COMMAND_TYPE_vkCmdBindVertexBuffers2_EXT] = vn_dispatch_vkCmdBindVertexBuffers2,
     [VK_COMMAND_TYPE_vkCmdSetDepthTestEnable_EXT] = vn_dispatch_vkCmdSetDepthTestEnable,
     [VK_COMMAND_TYPE_vkCmdSetDepthWriteEnable_EXT] = vn_dispatch_vkCmdSetDepthWriteEnable,
@@ -573,6 +658,7 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkCmdResolveImage2_EXT] = vn_dispatch_vkCmdResolveImage2,
     [VK_COMMAND_TYPE_vkCmdSetFragmentShadingRateKHR_EXT] = vn_dispatch_vkCmdSetFragmentShadingRateKHR,
     [VK_COMMAND_TYPE_vkGetPhysicalDeviceFragmentShadingRatesKHR_EXT] = vn_dispatch_vkGetPhysicalDeviceFragmentShadingRatesKHR,
+    [VK_COMMAND_TYPE_vkGetAccelerationStructureBuildSizesKHR_EXT] = vn_dispatch_vkGetAccelerationStructureBuildSizesKHR,
     [VK_COMMAND_TYPE_vkCmdSetVertexInputEXT_EXT] = vn_dispatch_vkCmdSetVertexInputEXT,
     [VK_COMMAND_TYPE_vkCmdSetColorWriteEnableEXT_EXT] = vn_dispatch_vkCmdSetColorWriteEnableEXT,
     [VK_COMMAND_TYPE_vkCmdSetEvent2_EXT] = vn_dispatch_vkCmdSetEvent2,
@@ -581,10 +667,21 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkCmdPipelineBarrier2_EXT] = vn_dispatch_vkCmdPipelineBarrier2,
     [VK_COMMAND_TYPE_vkQueueSubmit2_EXT] = vn_dispatch_vkQueueSubmit2,
     [VK_COMMAND_TYPE_vkCmdWriteTimestamp2_EXT] = vn_dispatch_vkCmdWriteTimestamp2,
+    [VK_COMMAND_TYPE_vkCopyImageToImage_EXT] = vn_dispatch_vkCopyImageToImage,
+    [VK_COMMAND_TYPE_vkTransitionImageLayout_EXT] = vn_dispatch_vkTransitionImageLayout,
     [VK_COMMAND_TYPE_vkCmdBeginRendering_EXT] = vn_dispatch_vkCmdBeginRendering,
     [VK_COMMAND_TYPE_vkCmdEndRendering_EXT] = vn_dispatch_vkCmdEndRendering,
-    [VK_COMMAND_TYPE_vkGetImageSubresourceLayout2KHR_EXT] = vn_dispatch_vkGetImageSubresourceLayout2KHR,
-    [VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayoutKHR_EXT] = vn_dispatch_vkGetDeviceImageSubresourceLayoutKHR,
+    [VK_COMMAND_TYPE_vkGetImageSubresourceLayout2_EXT] = vn_dispatch_vkGetImageSubresourceLayout2,
+    [VK_COMMAND_TYPE_vkCmdSetDepthBias2EXT_EXT] = vn_dispatch_vkCmdSetDepthBias2EXT,
+    [VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayout_EXT] = vn_dispatch_vkGetDeviceImageSubresourceLayout,
+    [VK_COMMAND_TYPE_vkUnmapMemory2_EXT] = vn_dispatch_vkUnmapMemory2,
+    [VK_COMMAND_TYPE_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR_EXT] = vn_dispatch_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR,
+    [VK_COMMAND_TYPE_vkCmdBindDescriptorSets2_EXT] = vn_dispatch_vkCmdBindDescriptorSets2,
+    [VK_COMMAND_TYPE_vkCmdPushConstants2_EXT] = vn_dispatch_vkCmdPushConstants2,
+    [VK_COMMAND_TYPE_vkCmdPushDescriptorSet2_EXT] = vn_dispatch_vkCmdPushDescriptorSet2,
+    [VK_COMMAND_TYPE_vkCmdSetRenderingAttachmentLocations_EXT] = vn_dispatch_vkCmdSetRenderingAttachmentLocations,
+    [VK_COMMAND_TYPE_vkCmdSetRenderingInputAttachmentIndices_EXT] = vn_dispatch_vkCmdSetRenderingInputAttachmentIndices,
+    [VK_COMMAND_TYPE_vkCmdSetDepthClampRangeEXT_EXT] = vn_dispatch_vkCmdSetDepthClampRangeEXT,
     [VK_COMMAND_TYPE_vkSetReplyCommandStreamMESA_EXT] = vn_dispatch_vkSetReplyCommandStreamMESA,
     [VK_COMMAND_TYPE_vkSeekReplyCommandStreamMESA_EXT] = vn_dispatch_vkSeekReplyCommandStreamMESA,
     [VK_COMMAND_TYPE_vkExecuteCommandStreamsMESA_EXT] = vn_dispatch_vkExecuteCommandStreamsMESA,
@@ -599,6 +696,8 @@ static void (*const vn_dispatch_table[283])(struct vn_dispatch_context *ctx, VkC
     [VK_COMMAND_TYPE_vkSubmitVirtqueueSeqnoMESA_EXT] = vn_dispatch_vkSubmitVirtqueueSeqnoMESA,
     [VK_COMMAND_TYPE_vkWaitVirtqueueSeqnoMESA_EXT] = vn_dispatch_vkWaitVirtqueueSeqnoMESA,
     [VK_COMMAND_TYPE_vkWaitRingSeqnoMESA_EXT] = vn_dispatch_vkWaitRingSeqnoMESA,
+    [VK_COMMAND_TYPE_vkCopyImageToMemoryMESA_EXT] = vn_dispatch_vkCopyImageToMemoryMESA,
+    [VK_COMMAND_TYPE_vkCopyMemoryToImageMESA_EXT] = vn_dispatch_vkCopyMemoryToImageMESA,
 };
 
 static inline void vn_dispatch_command(struct vn_dispatch_context *ctx)
@@ -610,7 +709,7 @@ static inline void vn_dispatch_command(struct vn_dispatch_context *ctx)
     vn_decode_VkFlags(ctx->decoder, &cmd_flags);
 
     {
-        if (cmd_type < 283 && vn_dispatch_table[cmd_type])
+        if (cmd_type < 335 && vn_dispatch_table[cmd_type])
             vn_dispatch_table[cmd_type](ctx, cmd_flags);
         else
             vn_cs_decoder_set_fatal(ctx->decoder);

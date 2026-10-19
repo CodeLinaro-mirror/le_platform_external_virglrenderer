@@ -119,19 +119,25 @@
  * function" warnings.
  */
 #if defined(HAVE___BUILTIN_UNREACHABLE) || __has_builtin(__builtin_unreachable)
-#define unreachable(str)    \
+#define UNREACHABLE(str)    \
 do {                        \
+   (void)"" str; /* str must be a string literal */ \
    assert(!str);            \
    __builtin_unreachable(); \
 } while (0)
 #elif defined (_MSC_VER)
-#define unreachable(str)    \
+#define UNREACHABLE(str)    \
 do {                        \
+   (void)"" str; /* str must be a string literal */ \
    assert(!str);            \
    __assume(0);             \
 } while (0)
 #else
-#define unreachable(str) assert(!str)
+#define UNREACHABLE(str)    \
+do {                        \
+   (void)"" str; /* str must be a string literal */ \
+   assert(!str);            \
+} while (0)
 #endif
 
 /**
@@ -235,12 +241,6 @@ do {                       \
 #  else
 #    define NORETURN
 #  endif
-#endif
-
-#ifdef _MSC_VER
-#define ALIGN16 __declspec(align(16))
-#else
-#define ALIGN16 __attribute__((aligned(16)))
 #endif
 
 #ifdef __cplusplus
@@ -442,13 +442,29 @@ enum pipe_debug_type
    PIPE_DEBUG_TYPE_CONFORMANCE,
 };
 
-#if !defined(alignof) && !defined(__cplusplus)
-#if __STDC_VERSION__ >= 201112L
-#define alignof(t) _Alignof(t)
-#elif defined(_MSC_VER)
-#define alignof(t) __alignof(t)
+/* alignas usage
+ * For struct or union, use alignas(align_size) on any member
+ * of it will make it aligned to align_size.
+ * See https://en.cppreference.com/w/c/language/_Alignas for
+ * details. We can use static_assert and alignof to check if
+ * the alignment result of alignas(align_size) on struct or
+ * union is valid.
+ * For example:
+ *   static_assert(alignof(struct tgsi_exec_machine) == 16, "")
+ * Also, we can use special code to see the size of the aligned
+ * struct or union at the compile time with GCC, Clang or MSVC.
+ * So we can see if the size of union or struct are as expected
+ * when using alignas(align_size) on its member.
+ * For example:
+ *   char (*__kaboom)[sizeof(struct tgsi_exec_machine)] = 1;
+ * can show us the size of struct tgsi_exec_machine at compile
+ * time.
+ */
+#ifndef __cplusplus
+#ifdef _MSC_VER
+#define alignof _Alignof
 #else
-#define alignof(t) __alignof__(t)
+#include <stdalign.h>
 #endif
 #endif
 

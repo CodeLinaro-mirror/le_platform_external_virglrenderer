@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <xf86drm.h>
@@ -23,6 +24,10 @@
 
 #ifdef ENABLE_DRM_AMDGPU
 #  include "amdgpu/amdgpu_renderer.h"
+#endif
+
+#ifdef ENABLE_DRM_ASAHI
+#  include "asahi/asahi_renderer.h"
 #endif
 
 static struct virgl_renderer_capset_drm capset;
@@ -47,6 +52,14 @@ static const struct backend {
       .name = "amdgpu",
       .probe = amdgpu_renderer_probe,
       .create = amdgpu_renderer_create,
+   },
+#endif
+#ifdef ENABLE_DRM_ASAHI
+   {
+      .context_type = VIRTGPU_DRM_CONTEXT_ASAHI,
+      .name = "asahi",
+      .probe = asahi_renderer_probe,
+      .create = asahi_renderer_create,
    },
 #endif
 };
@@ -128,7 +141,7 @@ drm_renderer_capset(void *_c)
 }
 
 struct virgl_context *
-drm_renderer_create(size_t debug_len, const char *debug_name)
+drm_renderer_create(size_t debug_len, const char *debug_name, int drm_fd)
 {
    for (unsigned i = 0; i < ARRAY_SIZE(backends); i++) {
       const struct backend *b = &backends[i];
@@ -136,9 +149,19 @@ drm_renderer_create(size_t debug_len, const char *debug_name)
       if (b->context_type != capset.context_type)
          continue;
 
-      int fd = drmOpenWithType(b->name, NULL, DRM_NODE_RENDER);
+      int fd = drm_fd;
+      if (fd < 0)
+         fd = drmOpenWithType(b->name, NULL, DRM_NODE_RENDER);
       if (fd < 0)
          return NULL;
+
+      if (debug_len && debug_name) {
+         struct drm_set_client_name n = {
+            .name_len = debug_len,
+            .name = (uint64_t) debug_name
+         };
+         drmIoctl(fd, DRM_IOCTL_SET_CLIENT_NAME, &n);
+      }
 
       return b->create(fd, debug_len, debug_name);
    }

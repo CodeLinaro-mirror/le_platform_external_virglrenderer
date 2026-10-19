@@ -197,8 +197,10 @@ struct vrend_if_cbs {
 #define VREND_D3D11_SHARE_TEXTURE (1 << 4)
 #define VREND_USE_COMPAT_CONTEXT (1 << 5)
 #define VREND_USE_GLES (1 << 6)
+#define VREND_USE_GBM_LAYOUT (1 << 7)
 
 bool vrend_check_no_error(struct vrend_context *ctx);
+void vrend_context_reset_error(struct vrend_context *ctx);
 
 const struct virgl_resource_pipe_callbacks *
 vrend_renderer_get_pipe_callbacks(void);
@@ -443,8 +445,8 @@ void vrend_set_uniform_buffer(struct vrend_context *ctx, uint32_t shader,
                               uint32_t res_handle);
 
 void vrend_fb_bind_texture_id(struct vrend_resource *res,
-                              int id, int idx, uint32_t level,
-                              uint32_t layer, uint32_t samples);
+                              int id, GLuint idx, GLint level,
+                              GLint layer, uint32_t samples);
 
 void vrend_set_tess_state(struct vrend_context *ctx, const float tess_factors[6]);
 
@@ -580,8 +582,8 @@ void vrend_report_context_error_internal(const char *fname, struct vrend_context
     vrend_report_context_error(ctx, VIRGL_ERROR_CTX_ILLEGAL_CMD_BUFFER, cmd)
 
 void vrend_fb_bind_texture(struct vrend_resource *res,
-                           int idx,
-                           uint32_t level, uint32_t layer);
+                           GLuint idx,
+                           GLint level, GLint layer);
 bool vrend_format_is_emulated_alpha(enum virgl_formats format);
 bool vrend_format_is_bgra(enum virgl_formats format);
 
@@ -642,5 +644,8 @@ struct vrend_video_context *vrend_context_get_video_ctx(struct vrend_context *ct
 int
 vrend_renderer_resource_d3d11_texture2d(struct pipe_resource *res, void **handle);
 
+int
+vrend_renderer_pipe_resource_get_layout(struct vrend_context *ctx,
+                                        uint32_t out_res_id, uint32_t res_id);
 
 #endif

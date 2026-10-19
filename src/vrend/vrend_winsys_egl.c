@@ -41,7 +41,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#ifdef ENABLE_DRM
+#ifdef ENABLE_LIBDRM
 #include <xf86drm.h>
 #endif
 
@@ -196,7 +196,7 @@ static bool virgl_egl_check_extensions(struct virgl_egl *egl)
    return true;
 }
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
 
 static EGLint virgl_egl_find_3d_device(struct gbm_device_info *dev_infos, EGLint num_devices, uint32_t flags)
 {
@@ -247,7 +247,7 @@ static EGLDeviceEXT virgl_egl_get_device(struct virgl_egl *egl) {
        memset(&dev_infos[d], 0, sizeof(dev_infos[d]));
        if (dev_node) {
           if (gbm_detect_device_info_path(0, dev_node, dev_infos+d) < 0)
-             return false;
+             return EGL_NO_DEVICE_EXT;
        } else {
           dev_infos[d].dri_node_num = -1;
        }
@@ -296,7 +296,7 @@ static bool virgl_egl_get_display(struct virgl_egl *egl)
    egl->egl_display = egl->funcs.eglGetPlatformDisplay(EGL_PLATFORM_DEVICE_EXT, device, NULL);
    return true;
 }
-#endif /* ENABLE_MINIGBM_ALLOCATION */
+#endif /* ENABLE_GBM_ALLOCATION */
 
 #ifdef ENABLE_GBM
 struct virgl_egl *virgl_egl_init(struct virgl_gbm *gbm, bool surfaceless, bool gles)
@@ -346,7 +346,7 @@ struct virgl_egl *virgl_egl_init(EGLNativeDisplayType display_id, bool surfacele
    if (!virgl_egl_add_extensions(egl, extensions))
       goto fail;
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
    if (virgl_egl_get_display(egl)) {
      /* Make -Wdangling-else happy. */
    } else /* Fallback to surfaceless. */
@@ -361,7 +361,7 @@ struct virgl_egl *virgl_egl_init(EGLNativeDisplayType display_id, bool surfacele
 #ifdef ENABLE_GBM
       else
          egl->egl_display = egl->funcs.eglGetPlatformDisplay(EGL_PLATFORM_GBM_KHR,
-                                                             (EGLNativeDisplayType)egl->gbm->device, NULL);
+                                                             (EGLNativeDisplayType*)egl->gbm->device, NULL);
 #endif
    } else {
 #ifdef ENABLE_GBM
@@ -663,13 +663,14 @@ virgl_renderer_gl_context virgl_egl_get_current_context(UNUSED struct virgl_egl 
 int virgl_egl_get_attrs_for_texture(struct virgl_egl *egl, uint32_t tex_id,
                                     uint32_t format, int *fourcc,
                                     bool *has_dmabuf_export,
-                                    int *planes, uint64_t *modifiers)
+                                    int *planes, uint64_t *modifier)
 {
    int ret = EINVAL;
    uint32_t gbm_format = 0;
 
    EGLImageKHR image;
    EGLBoolean success;
+   uint64_t modifiers[4];
 
    if (!has_bit(egl->extension_bits, EGL_MESA_IMAGE_DMA_BUF_EXPORT)) {
       ret = 0;
@@ -686,6 +687,9 @@ int virgl_egl_get_attrs_for_texture(struct virgl_egl *egl, uint32_t tex_id,
                                            modifiers);
    if (!success)
       goto out_destroy;
+   /* Only first modifier matters. */
+   if (modifier)
+      *modifier = modifiers[0];
    ret = 0;
  out_destroy:
    eglDestroyImageKHR(egl->egl_display, image);
@@ -841,7 +845,7 @@ void virgl_egl_image_destroy(struct virgl_egl *egl, void *image)
 }
 #endif
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
 void *virgl_egl_image_from_gbm_bo(struct virgl_egl *egl, struct gbm_bo *bo)
 {
    int ret;
@@ -916,7 +920,7 @@ void *virgl_egl_aux_plane_image_from_gbm_bo(struct virgl_egl *egl, struct gbm_bo
 
    return image;
 }
-#endif /* ENABLE_MINIGBM_ALLOCATION */
+#endif /* ENABLE_GBM_ALLOCATION */
 
 bool virgl_egl_supports_fences(struct virgl_egl *egl)
 {

@@ -6,11 +6,11 @@
 #include "render_client.h"
 
 #include <unistd.h>
-#include <vulkan/vulkan.h>
 
 #include "render_context.h"
 #include "render_server.h"
 #include "render_worker.h"
+#include "vkr_library.h"
 
 /* There is a render_context_record for each worker.
  *
@@ -223,11 +223,7 @@ render_client_dispatch_init(struct render_client *client,
                             const union render_client_op_request *req)
 {
    client->init_flags = req->init.flags;
-
-   /* this makes the Vulkan loader loads ICDs */
-   uint32_t unused_count;
-   vkEnumerateInstanceExtensionProperties(NULL, &unused_count, NULL);
-
+   vkr_library_preload_icd();
    return true;
 }
 

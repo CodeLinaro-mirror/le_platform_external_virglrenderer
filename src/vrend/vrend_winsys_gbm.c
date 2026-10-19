@@ -103,9 +103,15 @@ static const struct format_conversion conversions[] = {
     { GBM_FORMAT_ARGB8888, VIRGL_FORMAT_B8G8R8A8_UNORM },
     { GBM_FORMAT_XRGB8888, VIRGL_FORMAT_B8G8R8X8_UNORM },
     { GBM_FORMAT_ABGR2101010, VIRGL_FORMAT_R10G10B10A2_UNORM },
+    { GBM_FORMAT_XBGR2101010, VIRGL_FORMAT_R10G10B10X2_UNORM },
+    { GBM_FORMAT_ARGB2101010, VIRGL_FORMAT_B10G10R10A2_UNORM },
     { GBM_FORMAT_XRGB2101010, VIRGL_FORMAT_B10G10R10X2_UNORM },
     { GBM_FORMAT_ABGR16161616F, VIRGL_FORMAT_R16G16B16A16_FLOAT },
     { GBM_FORMAT_XBGR16161616F, VIRGL_FORMAT_R16G16B16X16_FLOAT },
+#ifdef GBM_FORMAT_XBGR16161616
+    { GBM_FORMAT_XBGR16161616, VIRGL_FORMAT_R16G16B16X16_UNORM },
+    { GBM_FORMAT_ABGR16161616, VIRGL_FORMAT_R16G16B16A16_UNORM },
+#endif
     { GBM_FORMAT_NV12, VIRGL_FORMAT_NV12 },
     { GBM_FORMAT_ABGR8888, VIRGL_FORMAT_R8G8B8A8_UNORM},
     { GBM_FORMAT_XBGR8888, VIRGL_FORMAT_R8G8B8X8_UNORM},
@@ -197,7 +203,7 @@ static const struct planar_layout *layout_from_format(uint32_t format)
    }
 }
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
 static void virgl_gbm_transfer_internal(uint32_t planar_bytes_per_pixel,
                                         uint32_t subsampled_width,
                                         uint32_t subsampled_height,
@@ -261,7 +267,7 @@ static void virgl_gbm_transfer_internal(uint32_t planar_bytes_per_pixel,
          current_height++;
    }
 }
-#endif /* ENABLE_MINIGBM_ALLOCATION */
+#endif /* ENABLE_GBM_ALLOCATION */
 
 struct virgl_gbm *virgl_gbm_init(int fd)
 {
@@ -271,7 +277,7 @@ struct virgl_gbm *virgl_gbm_init(int fd)
 
    gbm->fd = -1;
    if (fd < 0) {
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
       gbm->device = minigbm_create_default_device(&gbm->fd);
       if (gbm->device)
          return gbm;
@@ -328,7 +334,7 @@ int virgl_gbm_convert_format(uint32_t *virgl_format, uint32_t *gbm_format)
     return -1;
 }
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
 int virgl_gbm_transfer(struct gbm_bo *bo, uint32_t direction, const struct iovec *iovecs,
                        uint32_t num_iovecs, const struct vrend_transfer_info *info)
 {
@@ -523,22 +529,22 @@ err_close:
 uint32_t virgl_gbm_get_map_info(struct gbm_bo *bo) {
    uint32_t map_info;
 #if defined(MINIGBM) && defined(MINIGBM_HAS_GBM_BO_GET_MAP_INFO)
-      enum gbm_bo_map_cache_mode cache_mode = gbm_bo_get_map_info(bo);
-      switch(cache_mode) {
-      /* case GBM_BO_MAP_CACHE_NONE: */
-      /*    map_info = VIRGL_RENDERER_MAP_CACHE_NONE; */
-      /*    break; */
-      case GBM_BO_MAP_CACHE_CACHED:
-         map_info = VIRGL_RENDERER_MAP_CACHE_CACHED;
-         break;
-      /* case GBM_BO_MAP_CACHE_UNCACHED: */
-      /*    map_info = VIRGL_RENDERER_MAP_CACHE_UNCACHED; */
-      /*    break; */
-      case GBM_BO_MAP_CACHE_WC:
-      default:
-         map_info = VIRGL_RENDERER_MAP_CACHE_WC;
-         break;
-      }
+   enum gbm_bo_map_cache_mode cache_mode = gbm_bo_get_map_info(bo);
+   switch(cache_mode) {
+   /* case GBM_BO_MAP_CACHE_NONE: */
+   /*    map_info = VIRGL_RENDERER_MAP_CACHE_NONE; */
+   /*    break; */
+   case GBM_BO_MAP_CACHE_CACHED:
+      map_info = VIRGL_RENDERER_MAP_CACHE_CACHED;
+      break;
+   /* case GBM_BO_MAP_CACHE_UNCACHED: */
+   /*    map_info = VIRGL_RENDERER_MAP_CACHE_UNCACHED; */
+   /*    break; */
+   case GBM_BO_MAP_CACHE_WC:
+   default:
+      map_info = VIRGL_RENDERER_MAP_CACHE_WC;
+      break;
+   }
 #else
    /* That GPU allocations on all intel devices are CACHED is famously untrue
     * on Intel devices that don't have a shared last-level-cache architecture to
@@ -548,7 +554,8 @@ uint32_t virgl_gbm_get_map_info(struct gbm_bo *bo) {
     *
     * Still this heuristic is retained as a fallback for the missing minigbm API
     */
-   if (!strcmp(gbm_device_get_backend_name(gbm->device), "i915"))
+   struct gbm_device *gbm = gbm_bo_get_device(bo);
+   if (!strcmp(gbm_device_get_backend_name(gbm), "i915"))
       map_info = VIRGL_RENDERER_MAP_CACHE_CACHED;
    else
       map_info = VIRGL_RENDERER_MAP_CACHE_WC;
@@ -557,7 +564,7 @@ uint32_t virgl_gbm_get_map_info(struct gbm_bo *bo) {
 #endif
    return map_info;
 }
-#endif // #ifdef ENABLE_MINIGBM_ALLOCATION
+#endif // #ifdef ENABLE_GBM_ALLOCATION
 
 int virgl_gbm_export_fd(struct gbm_device *gbm, uint32_t handle, int32_t *out_fd)
 {

@@ -15,6 +15,7 @@
 #define XXH_INLINE_ALL
 #include "util/xxhash.h"
 
+#include "vkr_acceleration_structure.h"
 #include "vkr_buffer.h"
 #include "vkr_command_buffer.h"
 #include "vkr_context.h"
@@ -22,6 +23,7 @@
 #include "vkr_descriptor_set.h"
 #include "vkr_device.h"
 #include "vkr_device_memory.h"
+#include "vkr_host_copy.h"
 #include "vkr_image.h"
 #include "vkr_instance.h"
 #include "vkr_physical_device.h"
@@ -117,6 +119,18 @@ vkr_context_init_dispatch(struct vkr_context *ctx)
 
    vkr_context_init_command_pool_dispatch(ctx);
    vkr_context_init_command_buffer_dispatch(ctx);
+
+   vkr_context_init_host_copy_dispatch(ctx);
+
+   vkr_context_init_acceleration_structure_dispatch(ctx);
+}
+
+static inline void
+vkr_context_init_proc_table(struct vkr_context *ctx)
+{
+   /* Get vkGetInstanceProcAddr from libvulkan */
+   ctx->get_proc_addr = ctx->vulkan_library.GetInstanceProcAddr;
+   vn_util_init_global_proc_table(ctx->get_proc_addr, &ctx->proc_table);
 }
 
 bool
@@ -310,12 +324,12 @@ vkr_context_create_resource_from_device_memory(struct vkr_context *ctx,
    if (!vkr_device_memory_export_blob(mem, blob_size, blob_flags, &blob))
       return false;
 
-   /* For CROSS_DEVICE, store a dup'ed fd in vkr_resource for:
+   /* If memory might get exported, store a dup'ed fd in vkr_resource for:
     * - vkAllocateMemory for dma_buf import
     * - vkGetMemoryFdPropertiesKHR for dma_buf fd properties query
     */
    int res_fd = -1;
-   if (blob_flags & VIRGL_RENDERER_BLOB_FLAG_USE_CROSS_DEVICE) {
+   if (mem->might_export) {
       res_fd = os_dupfd_cloexec(blob.u.fd);
       if (res_fd < 0) {
          close(blob.u.fd);
@@ -620,6 +634,8 @@ vkr_context_destroy(struct vkr_context *ctx)
    vkr_cs_encoder_fini(&ctx->encoder);
    vkr_cs_decoder_fini(&ctx->decoder);
 
+   vkr_library_unload(&ctx->vulkan_library);
+
    free(ctx->debug_name);
    free(ctx);
 }
@@ -653,6 +669,12 @@ vkr_context_create(uint32_t ctx_id,
    if (!ctx)
       return NULL;
 
+   bool ret = vkr_library_load(&ctx->vulkan_library);
+   if (!ret) {
+      free(ctx);
+      return NULL;
+   }
+
    ctx->ctx_id = ctx_id;
    ctx->retire_fence = cb;
    ctx->debug_name = malloc(debug_len + 1);
@@ -662,13 +684,8 @@ vkr_context_create(uint32_t ctx_id,
    memcpy(ctx->debug_name, debug_name, debug_len);
    ctx->debug_name[debug_len] = '\0';
 
-#ifdef ENABLE_VENUS_VALIDATE
-   ctx->validate_level = VKR_CONTEXT_VALIDATE_ON;
-   ctx->validate_fatal = false; /* TODO set this to true */
-#else
    ctx->validate_level = VKR_CONTEXT_VALIDATE_NONE;
    ctx->validate_fatal = false;
-#endif
    if (VKR_DEBUG(VALIDATE))
       ctx->validate_level = VKR_CONTEXT_VALIDATE_FULL;
 
@@ -703,6 +720,7 @@ vkr_context_create(uint32_t ctx_id,
       goto err_cs_encoder_init;
 
    vkr_context_init_dispatch(ctx);
+   vkr_context_init_proc_table(ctx);
 
    if (mtx_init(&ctx->ring_mutex, mtx_plain) != thrd_success)
       goto err_ctx_ring_mutex;

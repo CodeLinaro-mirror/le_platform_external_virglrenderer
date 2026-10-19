@@ -36,7 +36,7 @@
 #include "vkr_renderer.h"
 
 /* cap instance and device api versions to this */
-#define VKR_MAX_API_VERSION VK_API_VERSION_1_3
+#define VKR_MAX_API_VERSION VK_API_VERSION_1_4
 
 #define VKR_DEBUG(category) (unlikely(vkr_debug_flags & VKR_DEBUG_##category))
 
@@ -59,6 +59,25 @@
    {                                                                                     \
       .begin = (offset), .end = (offset) + (size)                                        \
    }
+
+/* below STACK_ARRAY* utils came from mesa/src/vulkan/util/vk_util.h */
+#define STACK_ARRAY_SIZE 8
+
+/* Sometimes gcc may claim -Wmaybe-uninitialized for the stack array in some
+ * places it can't verify that when size is 0 nobody down the call chain reads
+ * the array. Please don't try to fix it by zero-initializing the array here
+ * since it's used in a lot of different places. An "if (size == 0) return;"
+ * may work for you.
+ */
+#define STACK_ARRAY(type, name, size)                                                    \
+   type _stack_##name[STACK_ARRAY_SIZE];                                                 \
+   type *const name =                                                                    \
+      ((size) <= STACK_ARRAY_SIZE ? _stack_##name                                        \
+                                  : (type *)malloc((size) * sizeof(type)))
+
+#define STACK_ARRAY_FINISH(name)                                                         \
+   if (name != _stack_##name)                                                            \
+   free(name)
 
 struct vn_info_extension_table;
 struct vkr_context;
@@ -90,6 +109,7 @@ struct vkr_pipeline_cache;
 struct vkr_pipeline;
 struct vkr_command_pool;
 struct vkr_command_buffer;
+struct vkr_acceleration_structure;
 
 typedef uint64_t vkr_object_id;
 
@@ -134,6 +154,8 @@ struct vkr_object {
       VkCommandPool command_pool;
       VkSamplerYcbcrConversion sampler_ycbcr_conversion;
       VkDescriptorUpdateTemplate descriptor_update_template;
+
+      VkAccelerationStructureKHR acceleration_structure;
    } handle;
 
    struct list_head track_head;
@@ -252,6 +274,8 @@ vkr_is_recognized_object_type(VkObjectType type)
    /* VK_VERSION_1_1 */
    case VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION:
    case VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE:
+   /* VK_KHR_acceleration_structure */
+   case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
       return true;
    default:
       vkr_log("unrecognized object type %u", type);

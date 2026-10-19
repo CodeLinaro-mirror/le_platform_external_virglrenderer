@@ -23,7 +23,7 @@
 
 project(
    'virglrenderer', 'c',
-   version: '1.1.0',
+   version: '1.2.0',
    license : 'MIT',
    meson_version : '>= 0.55',
    default_options : ['buildtype=release', 'b_ndebug=if-release',
@@ -39,7 +39,7 @@ project(
 #    and set "revision" and "interface_age" to zero
 
 binary_age    = 1
-interface_age = 9
+interface_age = 10
 revision      = 0
 
 virgl_version = meson.project_version()
@@ -105,11 +105,23 @@ if with_drm_amdgpu
   conf_data.set('ENABLE_DRM_AMDGPU', 1)
 endif
 
+with_drm_asahi = drm_renderers.contains('asahi')
+if with_drm_asahi
+  conf_data.set('ENABLE_DRM_ASAHI', 1)
+endif
+
 with_drm_renderers = drm_renderers.length() > 0
 
-libdrm_dep = dependency('libdrm', version : '>=2.4.50', required: with_drm_renderers or get_option('venus'))
+if with_drm_renderers
+  conf_data.set('ENABLE_DRM', 1)
+endif
+
+libdrm_dep = dependency('libdrm', version : '>=2.4.50', required: with_drm_renderers or get_option('video'))
 libdrm_amdgpu_dep = dependency('libdrm_amdgpu', version : '>=2.4.121', required: with_drm_amdgpu)
-conf_data.set('ENABLE_DRM', libdrm_dep.found())
+conf_data.set('ENABLE_LIBDRM', libdrm_dep.found())
+drm_uapi_dep = declare_dependency(
+   include_directories: include_directories('src' / 'drm' / 'drm-uapi')
+)
 
 pkg_cflags = []
 
@@ -169,6 +181,9 @@ if thread_dep.found() and not with_host_windows
       prefix : '#include <pthread.h>',
       args : '-D_GNU_SOURCE')
     conf_data.set('HAVE_PTHREAD_SETAFFINITY', 1)
+  endif
+  if cc.has_header('pthread_np.h')
+     conf_data.set('HAVE_PTHREAD_NP_H', 1)
   endif
 endif
 
@@ -262,25 +277,20 @@ with_glx = require_glx or auto_egl_glx
 have_egl = false
 have_glx = false
 
-with_minigbm_allocation = get_option('minigbm_allocation')
-if with_minigbm_allocation
-   assert(not with_host_windows, 'minigbm allocation is not supported by windows host')
-   conf_data.set('ENABLE_MINIGBM_ALLOCATION', 1)
-   _gbm_ver = '18.0.0'
-else
-   _gbm_ver = '0.0.0'
-endif
-
 if with_egl
    if cc.has_header('epoxy/egl.h', dependencies: epoxy_dep) and epoxy_dep.get_variable(pkgconfig: 'epoxy_has_egl') == '1'
       if with_host_windows or with_host_darwin
          have_egl = true
       else
          if libdrm_dep.found()
-            gbm_dep = dependency('gbm', version: '>= ' + _gbm_ver, required: require_egl)
+            gbm_dep = dependency('gbm', version: '>= 18.0.0', required: require_egl)
          endif
          have_egl = gbm_dep.found() and cc.has_header('sys/mman.h', required: require_egl)
          conf_data.set('ENABLE_GBM', have_egl)
+
+         if have_egl
+            conf_data.set('ENABLE_GBM_ALLOCATION', 1)
+         endif
       endif
       conf_data.set('HAVE_EPOXY_EGL_H', have_egl)
    else
@@ -324,17 +334,22 @@ with_render_server = with_venus
 with_render_server_worker = get_option('render-server-worker')
 render_server_install_dir = get_option('prefix') / get_option('libexecdir')
 if with_venus
-   if with_minigbm_allocation
-      gbm_dep = dependency('gbm')
+   venus_dep = []
+   if get_option('vulkan-dload')
+      conf_data.set('ENABLE_VULKAN_DLOAD', 1)
+   else
+      venus_dep = dependency('vulkan')
    endif
-   venus_dep = dependency('vulkan')
+
+   if host_machine.system() in ['freebsd', 'openbsd']
+      # When building for FreeBSD, epoll(7) is provided by a userspace
+      # wrapper around kqueue(2).
+      epoll_dep = dependency('epoll-shim')
+   else
+      epoll_dep = []
+   endif
 
    conf_data.set('ENABLE_VENUS', 1)
-
-   if get_option('venus-validate')
-      conf_data.set('ENABLE_VENUS_VALIDATE', 1)
-   endif
-
    conf_data.set('ENABLE_RENDER_SERVER', 1)
    conf_data.set('RENDER_SERVER_EXEC_PATH',
                  '"' + render_server_install_dir / 'virgl_render_server' + '"')
@@ -345,6 +360,10 @@ if with_venus
       meson.add_devenv(devenv)
    else
       warning('set RENDER_SERVER_EXEC_PATH env if not install')
+   endif
+
+   if get_option('vulkan-preload')
+      conf_data.set('ENABLE_VULKAN_PRELOAD', 1)
    endif
 
    if with_render_server_worker == 'process'
@@ -364,6 +383,9 @@ endif
 
 with_video = get_option('video')
 if with_video
+  if not have_egl
+     error('video require EGL, but it is not available')
+  endif
   conf_data.set('ENABLE_VIDEO', 1)
   libva_dep = dependency('libva')
   libvadrm_dep = dependency('libva-drm')
@@ -412,11 +434,10 @@ summary({'c_args': (' ').join(get_option('c_args')),
         'egl': have_egl,
         'glx': have_glx,
         'gbm': gbm_dep.found(),
-        'minigbm_alloc': with_minigbm_allocation,
         'venus': with_venus,
-        'drm-msm': with_drm_msm,
-        'render server (DEPRECATED)': with_render_server,
         'drm-amdgpu': with_drm_amdgpu,
+        'drm-asahi': with_drm_asahi,
+        'drm-msm': with_drm_msm,
         'render server worker': with_render_server ? with_render_server_worker : 'none',
         'video': with_video,
         'tests': with_tests,

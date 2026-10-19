@@ -30,7 +30,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include "virglrenderer_hw.h"
 #include "virgl_resource.h"
 
 #include "util/list.h"
@@ -67,7 +66,7 @@ struct virgl_context {
 
    int in_fence_fd;
 
-   enum virgl_renderer_capset capset_id;
+   uint32_t capset_id;
 
    /*
     * Each fence goes through submitted, signaled, and retired.  This callback
@@ -129,6 +128,16 @@ struct virgl_context {
                        uint32_t flags,
                        uint32_t ring_idx,
                        uint64_t fence_id);
+
+   /* For DRM native contexts, return the device fd: */
+   int (*get_device_fd)(struct virgl_context *ctx);
+
+   /* map a resource into a particular address */
+   void * (*resource_map)(struct virgl_context *ctx,
+                          struct virgl_resource *res,
+                          void *addr,
+                          int32_t prot,
+                          int32_t flags);
 };
 
 struct virgl_context_foreach_args {

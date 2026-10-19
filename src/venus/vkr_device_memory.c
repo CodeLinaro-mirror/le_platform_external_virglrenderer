@@ -47,7 +47,7 @@ vkr_get_fd_info_from_resource_info(struct vkr_context *ctx,
    return true;
 }
 
-#ifdef HAVE_LINUX_UDMABUF_H
+#if defined(HAVE_LINUX_UDMABUF_H) && defined(HAVE_MEMFD_CREATE)
 #include <fcntl.h>
 #include <linux/udmabuf.h>
 #include <sys/ioctl.h>
@@ -69,7 +69,7 @@ vkr_udmabuf_get_fd_info_from_allocation_info(struct vkr_physical_device *physica
       goto fail;
    }
 
-   const size_t size = align(alloc_info->allocationSize, 4096);
+   const size_t size = align(alloc_info->allocationSize, getpagesize());
    int ret = ftruncate(memfd, size);
    if (ret) {
       vkr_log("ftruncate failed (%s)", strerror(errno));
@@ -119,7 +119,7 @@ fail:
    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 }
 
-#else  /* HAVE_LINUX_UDMABUF_H */
+#else  /* HAVE_LINUX_UDMABUF_H && HAVE_MEMFD_CREATE */
 
 static inline VkResult
 vkr_udmabuf_get_fd_info_from_allocation_info(
@@ -132,9 +132,9 @@ vkr_udmabuf_get_fd_info_from_allocation_info(
    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 }
 
-#endif /* HAVE_LINUX_UDMABUF_H */
+#endif /* HAVE_LINUX_UDMABUF_H && HAVE_MEMFD_CREATE */
 
-#ifdef ENABLE_MINIGBM_ALLOCATION
+#ifdef ENABLE_GBM_ALLOCATION
 #include <gbm.h>
 
 #define GBM_BO_USE_SW_READ_RARELY (1 << 10)
@@ -176,9 +176,9 @@ vkr_gbm_get_fd_info_from_allocation_info(struct vkr_physical_device *physical_de
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
    /* 4K alignment is used on all implementations we support. */
-   gbm_bo =
-      gbm_bo_create(physical_dev->gbm_device, align(alloc_info->allocationSize, 4096), 1,
-                    GBM_FORMAT_R8, gbm_bo_use_flags);
+   gbm_bo = gbm_bo_create(physical_dev->gbm_device,
+                          align(alloc_info->allocationSize, getpagesize()), 1,
+                          GBM_FORMAT_R8, gbm_bo_use_flags);
    if (!gbm_bo)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 
@@ -225,7 +225,7 @@ vkr_gbm_get_fd_info_from_allocation_info(UNUSED struct vkr_physical_device *phys
    return VK_ERROR_OUT_OF_DEVICE_MEMORY;
 }
 
-#endif /* ENABLE_MINIGBM_ALLOCATION */
+#endif /* ENABLE_GBM_ALLOCATION */
 
 static void
 vkr_dispatch_vkAllocateMemory(struct vn_dispatch_context *dispatch,
@@ -258,6 +258,12 @@ vkr_dispatch_vkAllocateMemory(struct vn_dispatch_context *dispatch,
       prev_of_res_info->pNext = (const struct VkBaseInStructure *)&local_import_info;
    }
 
+   VkExportMemoryAllocateInfo *export_info =
+      vkr_find_struct(alloc_info->pNext, VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO);
+
+   /* track if driver has requested export allocation */
+   const bool might_export = export_info && export_info->handleTypes;
+
    /* XXX Force dma_buf/opaque fd export or gbm bo import until a new extension that
     * supports direct export from host visible memory
     *
@@ -275,8 +281,6 @@ vkr_dispatch_vkAllocateMemory(struct vn_dispatch_context *dispatch,
    int udmabuf_fd = -1;
    void *gbm_bo = NULL;
    VkExportMemoryAllocateInfo local_export_info;
-   VkExportMemoryAllocateInfo *export_info =
-      vkr_find_struct(alloc_info->pNext, VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO);
    if ((property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && !res_info) {
       /* An implementation can support dma_buf import along with opaque fd export/import.
        * If the client driver is using external memory and requesting dma_buf, without
@@ -304,6 +308,25 @@ vkr_dispatch_vkAllocateMemory(struct vn_dispatch_context *dispatch,
             };
             export_info = &local_export_info;
             alloc_info->pNext = &local_export_info;
+
+            if (handle_type == VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT) {
+               /* Guest virtgpu kernel aligns up blob mem size to the page boundary. No
+                * matter dma-buf or opaque fd export allocation, the actual allocation
+                * in most cases would follow the same padding. For dma-buf, we are able
+                * to allocate and validate via lseek below. For opaque fd, Vulkan spec
+                * requires to use the same size with allocation time for the mapper,
+                * either vkr_allocator or vulkano, to import and populate the mapping.
+                * Accessible mapping given by vkMapMemory is normally limited to just the
+                * alloc size. When KVM register the mappings to guest pci bar, that
+                * involves an invalid chunk towards the end of the page boundary. As a
+                * result, any guest side accelerated instructions that rely on the
+                * paddings can end up with Illegal instruction error. The most common
+                * trigger is via memcpy'ing valid range to the guest side mapped buffer
+                * memory, and then, e.g. __memcpy_avx_unaligned_erms  can hit the error.
+                */
+               alloc_info->allocationSize =
+                  align(alloc_info->allocationSize, getpagesize());
+            }
          }
       } else if (physical_dev->EXT_external_memory_dma_buf) {
          /* Allocate dma_buf externally and force to import. */
@@ -352,6 +375,7 @@ vkr_dispatch_vkAllocateMemory(struct vn_dispatch_context *dispatch,
    }
 
    mem->device = dev;
+   mem->might_export = might_export;
    mem->property_flags = property_flags;
    mem->valid_fd_types = valid_fd_types;
    mem->udmabuf_fd = udmabuf_fd;

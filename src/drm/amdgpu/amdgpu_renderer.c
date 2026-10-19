@@ -22,6 +22,7 @@
 
 #include "amdgpu_renderer.h"
 
+#include "pipe/p_state.h"
 #include "util/anon_file.h"
 #include "util/bitscan.h"
 #include "util/hash_table.h"
@@ -29,11 +30,10 @@
 #include "util/os_file.h"
 #include "util/u_atomic.h"
 #include "util/u_math.h"
-#include "pipe/p_state.h"
+#include "vrend/vrend_renderer.h"
 #include "amdgpu_virtio_proto.h"
 #include "virgl_context.h"
 #include "virglrenderer.h"
-#include "vrend_renderer.h"
 
 #include <stdalign.h>
 #include <errno.h>
@@ -51,6 +51,7 @@
 
 #if defined(__clang__)
 #pragma GCC diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#pragma GCC diagnostic ignored "-Wlanguage-extension-token"
 #endif
 
 #if 0
@@ -117,6 +118,7 @@ amdgpu_renderer_probe(int fd, struct virgl_renderer_capset_drm *capset)
    strncpy(capset->u.amdgpu.marketing_name,
            amdgpu_get_marketing_name(dev),
            sizeof(capset->u.amdgpu.marketing_name) - 1);
+   capset->u.amdgpu.has_vm_always_valid = 1;
 
    amdgpu_device_deinitialize(dev);
 
@@ -317,6 +319,39 @@ amdgpu_renderer_export_opaque_handle(struct virgl_context *vctx,
    }
 
    return VIRGL_RESOURCE_FD_DMABUF;
+}
+
+static void * amdgpu_renderer_resource_map(struct virgl_context *vctx,
+                                           struct virgl_resource *res,
+                                           void *addr,
+                                           int32_t prot,
+                                           int32_t flags)
+{
+   struct drm_context *dctx = to_drm_context(vctx);
+   struct amdgpu_context *ctx = to_amdgpu_context(dctx);
+   struct amdgpu_object *obj = amdgpu_get_object_from_res_id(ctx, res->res_id, __FUNCTION__);
+   union drm_amdgpu_gem_mmap args = { 0 };
+   int r;
+
+   print(2, "obj=%p, res_id=%u", (void *)obj, res->res_id);
+
+   if (!obj) {
+      print(0, "invalid res_id %u", res->res_id);
+      return NULL;
+   }
+
+   args.in.handle = obj->base.handle;
+
+   r = drmCommandWriteRead(amdgpu_device_get_fd(ctx->dev), DRM_AMDGPU_GEM_MMAP, &args,
+                           sizeof(args));
+
+   if (r) {
+      print(0, "DRM_AMDGPU_GEM_MMAP failed with r=%d", r);
+      return NULL;
+   }
+
+   return mmap(addr, obj->base.size, prot, flags,
+               amdgpu_device_get_fd(ctx->dev), args.out.addr_ptr);
 }
 
 static void
@@ -619,7 +654,7 @@ amdgpu_ccmd_set_metadata(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
       size_t requested_size = size_add(req->size_metadata,
                                        offsetof(struct amdgpu_ccmd_set_metadata_req,
                                                 umd_metadata));
-      if (requested_size > hdr->len || requested_size == SIZE_MAX) {
+      if (requested_size > hdr->len) {
          print(0, "Metadata size is too large for source buffer: %zu > %" PRIu32,
                requested_size, hdr->len);
          rsp->ret = -EINVAL;
@@ -657,19 +692,22 @@ amdgpu_ccmd_bo_query_info(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
       return -1;
    }
 
+   /* NOTE: Current implementation of KMS support is incomplete and may result in
+    * guest passing vrend dumb buffer resource to native context. In this case, native
+    * context should error out the offending resource, but continue execution.
+    */
    struct amdgpu_object *obj = amdgpu_get_object_from_res_id(ctx, req->res_id, __FUNCTION__);
    if (!obj) {
       print(0, "Cannot find object");
       rsp->hdr.ret = -EINVAL;
-      return -1;
+      return 0;
    }
 
    struct amdgpu_bo_info info = {0};
    rsp->hdr.ret = amdgpu_bo_query_info(obj->bo, &info);
    if (rsp->hdr.ret) {
       print(0, "amdgpu_bo_query_info failed");
-      rsp->hdr.ret = -EINVAL;
-      return -1;
+      return 0;
    }
 
    rsp->info.alloc_size = info.alloc_size;
@@ -710,7 +748,7 @@ amdgpu_ccmd_create_ctx(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
       rsp->hdr.ret = r;
       if (r) {
          print(0, "amdgpu_cs_ctx_create2(prio=%d) failed (%s)", req->priority, strerror(errno));
-         return r;
+         return 0;
       }
 
       print(1, "amdgpu_cs_ctx_create2 dev: %p -> %p", (void*)ctx->dev, (void*)ctx_handle);
@@ -747,7 +785,8 @@ amdgpu_ccmd_create_ctx(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
 
 /* Check that 'offset + len' fits in buffer of size 'max_len', that
  * 'len' is correct for 'count' objects of size 'size',
- * and that 'offset' is aligned to 'align'.
+ * and that 'offset' is aligned to 'align'.  'len' is assumed to not
+ * be SIZE_MAX, which is guaranteed at all call-sites.
  */
 static bool validate_chunk_inputs(size_t offset, size_t len, struct amdgpu_context *ctx,
                                   size_t count, size_t size, size_t align)
@@ -757,7 +796,7 @@ static bool validate_chunk_inputs(size_t offset, size_t len, struct amdgpu_conte
       return false; /* misaligned */
    }
    size_t total_len = size_mul(size, count);
-   if (total_len == SIZE_MAX || total_len > len) {
+   if (total_len > len) {
       print(0, "Length 0x%zx cannot hold 0x%zx entries of size 0x%zx",
             len, count, size);
       return false;
@@ -818,7 +857,7 @@ amdgpu_ccmd_cs_submit(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
    };
    size_t descriptors_len = size_add(offsetof(struct amdgpu_ccmd_cs_submit_req, payload),
                                      size_mul(req->num_chunks, sizeof(struct desc)));
-   if (descriptors_len == SIZE_MAX || descriptors_len > hdr->len) {
+   if (descriptors_len > hdr->len) {
       print(0, "Descriptors are out of bounds: %zu + %zu * %" PRIu32 " > %" PRIu32,
             offsetof(struct amdgpu_ccmd_cs_submit_req, payload),
             sizeof(struct desc), req->num_chunks, hdr->len);
@@ -835,7 +874,7 @@ amdgpu_ccmd_cs_submit(struct drm_context *dctx, struct vdrm_ccmd_req *hdr)
 
       chunks[num_chunks].chunk_id = chunk_id;
       /* Validate input. */
-      if (end == SIZE_MAX || end > hdr->len) {
+      if (end > hdr->len) {
          print(0, "Descriptors are out of bounds: %zu > %" PRIu32, end, hdr->len);
          r = -EINVAL;
          goto end;
@@ -1192,12 +1231,14 @@ amdgpu_renderer_create(int fd, size_t debug_len, const char *debug_name)
    print(1, "amdgpu_renderer_create name=%s fd=%d (from %d) -> dev=%p", ctx->debug_name, fd,
          amdgpu_device_get_fd(ctx->dev), (void*)ctx->dev);
 
-   if (!drm_context_init(&ctx->base, -1, ccmd_dispatch, ARRAY_SIZE(ccmd_dispatch)))
+   if (!drm_context_init(&ctx->base, os_dupfd_cloexec(amdgpu_device_get_fd(ctx->dev)),
+                         ccmd_dispatch, ARRAY_SIZE(ccmd_dispatch)))
       goto fail_init;
 
    ctx->base.base.destroy = amdgpu_renderer_destroy;
    ctx->base.base.attach_resource = amdgpu_renderer_attach_resource;
    ctx->base.base.export_opaque_handle = amdgpu_renderer_export_opaque_handle;
+   ctx->base.base.resource_map = amdgpu_renderer_resource_map;
    ctx->base.base.get_blob = amdgpu_renderer_get_blob;
    ctx->base.base.submit_fence = amdgpu_renderer_submit_fence;
    ctx->base.base.supports_fence_sharing = true;
@@ -1225,8 +1266,7 @@ amdgpu_renderer_create(int fd, size_t debug_len, const char *debug_name)
          if (asprintf(&name, "a-%s-%d", ctx->debug_name, ring_idx) < 0)
             goto fail_context_deinit;
          drm_timeline_init(&ctx->timelines[ring_idx - 1], &ctx->base.base,
-                           name,
-                           ctx->base.eventfd, ring_idx,
+                           name, ring_idx,
                            drm_context_fence_retire);
          ring_idx += 1;
       }

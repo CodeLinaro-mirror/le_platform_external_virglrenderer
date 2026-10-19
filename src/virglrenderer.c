@@ -45,16 +45,16 @@
 #include "util/u_math.h"
 #include "vkr_allocator.h"
 #include "drm_renderer.h"
-#include "vrend_renderer.h"
 #include "proxy/proxy_renderer.h"
-#include "vrend_winsys.h"
+#include "vrend/vrend_renderer.h"
+#include "vrend/vrend_winsys.h"
 
 #ifndef WIN32
 #include "util/libsync.h"
 #endif
 
 #include "virglrenderer.h"
-#include "virglrenderer_hw.h"
+#include "virtgpu_drm.h"
 
 #include "virgl_context.h"
 #include "virgl_fence.h"
@@ -182,16 +182,16 @@ void virgl_renderer_fill_caps(uint32_t set, uint32_t version,
                               void *caps)
 {
    switch (set) {
-   case VIRGL_RENDERER_CAPSET_VIRGL:
-   case VIRGL_RENDERER_CAPSET_VIRGL2:
+   case VIRTGPU_DRM_CAPSET_VIRGL:
+   case VIRTGPU_DRM_CAPSET_VIRGL2:
       if (state.vrend_initialized)
          vrend_renderer_fill_caps(set, version, (union virgl_caps *)caps);
       break;
-   case VIRGL_RENDERER_CAPSET_VENUS:
+   case VIRTGPU_DRM_CAPSET_VENUS:
       if (state.proxy_initialized)
          proxy_get_capset(set, caps);
       break;
-   case VIRGL_RENDERER_CAPSET_DRM:
+   case VIRTGPU_DRM_CAPSET_DRM:
       if (state.drm_initialized)
          drm_renderer_capset(caps);
       break;
@@ -215,8 +215,7 @@ int virgl_renderer_context_create_with_flags(uint32_t ctx_id,
                                              uint32_t nlen,
                                              const char *name)
 {
-   const enum virgl_renderer_capset capset_id =
-      ctx_flags & VIRGL_RENDERER_CONTEXT_FLAG_CAPSET_ID_MASK;
+   uint32_t capset_id = ctx_flags & VIRGL_RENDERER_CONTEXT_FLAG_CAPSET_ID_MASK;
    struct virgl_context *ctx;
    int ret;
 
@@ -236,21 +235,24 @@ int virgl_renderer_context_create_with_flags(uint32_t ctx_id,
    }
 
    switch (capset_id) {
-   case VIRGL_RENDERER_CAPSET_VIRGL:
-   case VIRGL_RENDERER_CAPSET_VIRGL2:
+   case VIRTGPU_DRM_CAPSET_VIRGL:
+   case VIRTGPU_DRM_CAPSET_VIRGL2:
       if (!state.vrend_initialized)
          return EINVAL;
       ctx = vrend_renderer_context_create(ctx_id, nlen, name);
       break;
-   case VIRGL_RENDERER_CAPSET_VENUS:
+   case VIRTGPU_DRM_CAPSET_VENUS:
       if (!state.proxy_initialized)
          return EINVAL;
       ctx = proxy_context_create(ctx_id, ctx_flags, nlen, name);
       break;
-   case VIRGL_RENDERER_CAPSET_DRM:
+   case VIRTGPU_DRM_CAPSET_DRM:
       if (!state.drm_initialized)
          return EINVAL;
-      ctx = drm_renderer_create(nlen, name);
+      if (state.cbs->version >= 2 && state.cbs->get_drm_fd)
+         ctx = drm_renderer_create(nlen, name, state.cbs->get_drm_fd(state.cookie));
+      else
+         ctx = drm_renderer_create(nlen, name, -1);
       break;
    default:
       return EINVAL;
@@ -276,7 +278,7 @@ int virgl_renderer_context_create_with_flags(uint32_t ctx_id,
 int virgl_renderer_context_create(uint32_t handle, uint32_t nlen, const char *name)
 {
    return virgl_renderer_context_create_with_flags(handle,
-                                                   VIRGL_RENDERER_CAPSET_VIRGL2,
+                                                   VIRTGPU_DRM_CAPSET_VIRGL2,
                                                    nlen,
                                                    name);
 }
@@ -468,6 +470,7 @@ int virgl_renderer_context_create_fence(uint32_t ctx_id,
 
 void virgl_renderer_context_poll(uint32_t ctx_id)
 {
+   TRACE_FUNC();
    struct virgl_context *ctx = virgl_context_lookup(ctx_id);
    if (!ctx)
       return;
@@ -594,15 +597,15 @@ void virgl_renderer_get_cap_set(uint32_t cap_set, uint32_t *max_ver,
 
    /* this may be called before virgl_renderer_init */
    switch (cap_set) {
-   case VIRGL_RENDERER_CAPSET_VIRGL:
-   case VIRGL_RENDERER_CAPSET_VIRGL2:
+   case VIRTGPU_DRM_CAPSET_VIRGL:
+   case VIRTGPU_DRM_CAPSET_VIRGL2:
       vrend_renderer_get_cap_set(cap_set, max_ver, max_size);
       break;
-   case VIRGL_RENDERER_CAPSET_VENUS:
+   case VIRTGPU_DRM_CAPSET_VENUS:
       *max_ver = 0;
       *max_size = proxy_get_capset(cap_set, NULL);
       break;
-   case VIRGL_RENDERER_CAPSET_DRM:
+   case VIRTGPU_DRM_CAPSET_DRM:
       *max_ver = 0;
       *max_size = drm_renderer_capset(NULL);
       break;
@@ -768,8 +771,8 @@ virgl_context_foreach_retire_fences(struct virgl_context *ctx,
                                     UNUSED void* data)
 {
    /* vrend contexts are polled explicitly by the caller */
-   if (ctx->capset_id != VIRGL_RENDERER_CAPSET_VIRGL &&
-       ctx->capset_id != VIRGL_RENDERER_CAPSET_VIRGL2 &&
+   if (ctx->capset_id != VIRTGPU_DRM_CAPSET_VIRGL &&
+       ctx->capset_id != VIRTGPU_DRM_CAPSET_VIRGL2 &&
        !(state.flags & VIRGL_RENDERER_ASYNC_FENCE_CB))
    {
       assert(ctx->retire_fences);
@@ -835,14 +838,18 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
 
    if (state.client_initialized && (state.cookie != cookie ||
                                     state.flags != flags ||
-                                    state.cbs != cbs))
+                                    state.cbs != cbs)) {
+      virgl_error("renderer already initialized");
       return -EBUSY;
+   }
 
    if (!state.client_initialized) {
       if (!cbs ||
           cbs->version < 1 ||
-          cbs->version > VIRGL_RENDERER_CALLBACKS_VERSION)
+          cbs->version > VIRGL_RENDERER_CALLBACKS_VERSION) {
+         virgl_error("invalid renderer callbacks");
          return -1;
+      }
 
       state.cookie = cookie;
       state.flags = flags;
@@ -856,15 +863,19 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
          vrend_renderer_get_pipe_callbacks();
 
       ret = virgl_resource_table_init(pipe_cbs);
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize virgl resources");
          goto fail;
+      }
       state.resource_initialized = true;
    }
 
    if (!state.context_initialized) {
       ret = virgl_context_table_init();
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize virgl context");
          goto fail;
+      }
       state.context_initialized = true;
    }
 
@@ -881,6 +892,7 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       if (ret) {
          if (drm_fd >= 0)
             close(drm_fd);
+         virgl_error("failed to initialize vrend winsys");
          goto fail;
       }
       state.winsys_initialized = true;
@@ -892,6 +904,7 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
 
       if (!cbs->create_gl_context || !cbs->destroy_gl_context ||
           !cbs->make_current) {
+         virgl_error("invalid renderer gl callbacks");
          ret = EINVAL;
          goto fail;
       }
@@ -899,12 +912,14 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       egl_display = state.cbs->get_egl_display(cookie);
 
       if (!egl_display) {
+         virgl_error("failed to get egl display");
          ret = -1;
          goto fail;
       }
       ret = vrend_winsys_init_external(egl_display);
 
       if (ret) {
+         virgl_error("failed to initialize vrend winsys");
          ret = -1;
          goto fail;
       }
@@ -916,6 +931,7 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
       uint32_t renderer_flags = 0;
 
       if (!cookie || !cbs) {
+         virgl_error("invalid renderer vrend callbacks");
          ret = -1;
          goto fail;
       }
@@ -934,17 +950,23 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
          renderer_flags |= VREND_USE_COMPAT_CONTEXT;
       if (flags & VIRGL_RENDERER_USE_GLES)
          renderer_flags |= VREND_USE_GLES;
+      if (flags & VIRGL_RENDERER_VENUS)
+         renderer_flags |= VREND_USE_GBM_LAYOUT;
 
       ret = vrend_renderer_init(&vrend_cbs, renderer_flags);
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize vrend renderer");
          goto fail;
+      }
       state.vrend_initialized = true;
    }
 
    if (!state.proxy_initialized && (flags & VIRGL_RENDERER_RENDER_SERVER)) {
       ret = proxy_renderer_init(&proxy_cbs, flags | VIRGL_RENDERER_NO_VIRGL);
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize venus renderer");
          goto fail;
+      }
       state.proxy_initialized = true;
    }
 
@@ -956,15 +978,19 @@ int virgl_renderer_init(void *cookie, int flags, struct virgl_renderer_callbacks
          drm_fd = cbs->get_drm_fd(cookie);
 
       ret = drm_renderer_init(drm_fd);
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize drm renderer");
          goto fail;
+      }
       state.drm_initialized = true;
    }
 
    if (!state.fence_initialized) {
       ret = virgl_fence_table_init();
-      if (ret)
+      if (ret) {
+         virgl_error("failed to initialize fence table");
          goto fail;
+      }
       state.fence_initialized = true;
    }
 
@@ -1240,23 +1266,34 @@ int virgl_renderer_resource_map(uint32_t res_handle, void **out_map, uint64_t *o
    int ret = 0;
    void *map = NULL;
    uint64_t map_size = 0;
+   struct virgl_context *ctx = NULL;
    struct virgl_resource *res = virgl_resource_lookup(res_handle);
    if (!res || res->mapped)
       return -EINVAL;
 
    if (res->pipe_resource) {
       ret = vrend_renderer_resource_map(res->pipe_resource, &map, &map_size);
-      if (!ret)
+      if (!ret) {
          res->map_size = map_size;
+         res->mapped_from_pipe_resource = true;
+      }
    } else {
       enum virgl_resource_fd_type fd_type = res->fd_type;
+      enum virgl_resource_fd_type export_fd_type = res->fd_type;
       int fd = res->fd;
 
-      /* Create a transient dmabuf. */
-      if (fd_type == VIRGL_RESOURCE_OPAQUE_HANDLE)
-         fd_type = virgl_resource_export_fd(res, &fd);
+      if (fd_type == VIRGL_RESOURCE_OPAQUE_HANDLE) {
+         ctx = virgl_context_lookup(res->opaque_handle_context_id);
+         if (!ctx)
+            return -EINVAL;
 
-      switch (fd_type) {
+         if (!ctx->resource_map) {
+            /* Create a transient dmabuf. */
+            export_fd_type = virgl_resource_export_fd(res, &fd);
+         }
+      }
+
+      switch (export_fd_type) {
       case VIRGL_RESOURCE_FD_DMABUF:
       case VIRGL_RESOURCE_FD_SHM:
          map = mmap(NULL, res->map_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
@@ -1266,6 +1303,9 @@ int virgl_renderer_resource_map(uint32_t res_handle, void **out_map, uint64_t *o
          ret = vkr_allocator_resource_map(res, &map, &map_size);
          break;
       case VIRGL_RESOURCE_OPAQUE_HANDLE:
+         map = ctx->resource_map(ctx, res, NULL, PROT_WRITE | PROT_READ, MAP_SHARED);
+         map_size = res->map_size;
+         break;
       case VIRGL_RESOURCE_FD_INVALID:
          /* Avoid a default case so that -Wswitch will tell us at compile time
           * if a new virgl resource type is added without being handled here.
@@ -1273,7 +1313,7 @@ int virgl_renderer_resource_map(uint32_t res_handle, void **out_map, uint64_t *o
          break;
       }
 
-      if (fd_type != res->fd_type)
+      if (export_fd_type != fd_type)
          close(fd);
    }
 
@@ -1286,6 +1326,59 @@ int virgl_renderer_resource_map(uint32_t res_handle, void **out_map, uint64_t *o
    return ret;
 }
 
+int virgl_renderer_resource_map_fixed(uint32_t res_handle, void *addr)
+{
+   void *map = NULL;
+   struct virgl_context *ctx = NULL;
+   struct virgl_resource *res = virgl_resource_lookup(res_handle);
+   enum virgl_resource_fd_type fd_type = res->fd_type;
+   enum virgl_resource_fd_type export_fd_type = res->fd_type;
+   int fd = res->fd;
+
+   if (!res)
+      return -EINVAL;
+
+   if (fd_type == VIRGL_RESOURCE_OPAQUE_HANDLE) {
+      ctx = virgl_context_lookup(res->opaque_handle_context_id);
+      if (!ctx)
+         return -EINVAL;
+
+      if (!ctx->resource_map) {
+         /* Create a transient dmabuf. */
+         export_fd_type = virgl_resource_export_fd(res, &fd);
+      }
+   }
+
+   switch (export_fd_type) {
+      case VIRGL_RESOURCE_FD_DMABUF:
+      case VIRGL_RESOURCE_FD_SHM:
+         map = mmap(addr, res->map_size, PROT_WRITE | PROT_READ,
+                    MAP_FIXED | MAP_SHARED, fd, 0);
+         break;
+      case VIRGL_RESOURCE_OPAQUE_HANDLE:
+         map = ctx->resource_map(ctx, res, addr, PROT_WRITE | PROT_READ,
+                                 MAP_FIXED | MAP_SHARED);
+         break;
+      case VIRGL_RESOURCE_FD_OPAQUE:
+      case VIRGL_RESOURCE_FD_INVALID:
+         /* Avoid a default case so that -Wswitch will tell us at compile time
+          * if a new virgl resource type is added without being handled here.
+          */
+      break;
+   }
+
+   if (export_fd_type != fd_type)
+      close(fd);
+
+   if (!map)
+      return -EOPNOTSUPP;
+
+   if (map == MAP_FAILED)
+      return -EINVAL;
+
+   return 0;
+}
+
 int virgl_renderer_resource_unmap(uint32_t res_handle)
 {
    TRACE_FUNC();
@@ -1294,7 +1387,8 @@ int virgl_renderer_resource_unmap(uint32_t res_handle)
    if (!res || !res->mapped)
       return -EINVAL;
 
-   if (res->pipe_resource) {
+   if (res->mapped_from_pipe_resource) {
+      assert(res->pipe_resource);
       ret = vrend_renderer_resource_unmap(res->pipe_resource);
    } else {
       switch (res->fd_type) {
@@ -1442,10 +1536,40 @@ int virgl_renderer_export_signalled_fence(void)
    return virgl_fence_get_last_signalled_fence_fd();
 }
 
+static int attach_in_fence_fd(struct virgl_context *ctx, int fence_fd)
+{
+   int ret = -EINVAL;
+
+#ifndef WIN32
+   ret = sync_accumulate("virglrenderer", &ctx->in_fence_fd, fence_fd);
+#endif
+   close(fence_fd);
+
+   return ret;
+}
+
+/* Special entrypoint for vtest, which has received a real fence fd,
+ * not a fence-id
+ */
+int virgl_renderer_attach_fence(int ctx_id, int fence_fd)
+{
+   TRACE_FUNC();
+   struct virgl_context *ctx = virgl_context_lookup(ctx_id);
+   if (!ctx)
+      return EINVAL;
+
+   return attach_in_fence_fd(ctx, fence_fd);
+}
+
+int virgl_renderer_get_fence_fd(uint64_t fence_id)
+{
+   return virgl_fence_get_fd(fence_id);
+}
+
 static int virgl_renderer_context_attach_in_fence(struct virgl_context *ctx,
                                                   uint64_t fence_id)
 {
-   int ret = -EINVAL;
+   int ret;
 
    /*
     * FD will be -1 in two cases:
@@ -1460,11 +1584,7 @@ static int virgl_renderer_context_attach_in_fence(struct virgl_context *ctx,
    if (fd < 0)
       return 0;
 
-#ifndef WIN32
-   ret = sync_accumulate("virglrenderer", &ctx->in_fence_fd, fd);
-#endif
-   close(fd);
-
+   ret = attach_in_fence_fd(ctx, fd);
    if (ret)
       virgl_error("%s: sync_accumulate failed for fence_id=%" PRIu64 " err=%d\n",
                   __func__, fence_id, ret);
@@ -1514,4 +1634,16 @@ int virgl_renderer_submit_cmd2(void *buffer,
    }
 
    return ctx->submit_cmd(ctx, buffer, (uint32_t)ndw * sizeof(uint32_t));
+}
+
+int virgl_renderer_get_dev_fd(int ctx_id)
+{
+   struct virgl_context *ctx = virgl_context_lookup(ctx_id);
+   if (!ctx)
+      return -EINVAL;
+
+   if (!ctx->get_device_fd)
+      return -ENODEV;
+
+   return ctx->get_device_fd(ctx);
 }

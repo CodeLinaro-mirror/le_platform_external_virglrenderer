@@ -26,6 +26,9 @@
 #define VK_STRUCTURE_TYPE_DEVICE_QUEUE_TIMELINE_INFO_MESA ((VkStructureType)1000384005)
 #define VK_STRUCTURE_TYPE_RING_MONITOR_INFO_MESA ((VkStructureType)1000384006)
 #define VK_STRUCTURE_TYPE_RING_PRIORITY_INFO_MESA ((VkStructureType)1000384007)
+#define VK_STRUCTURE_TYPE_COPY_IMAGE_TO_MEMORY_INFO_MESA ((VkStructureType)1000384008)
+#define VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_MESA ((VkStructureType)1000384009)
+#define VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_MESA ((VkStructureType)1000384010)
 
 typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkCreateInstance_EXT = 0,
@@ -248,6 +251,23 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkGetBufferOpaqueCaptureAddressKHR_EXT = 176,
     VK_COMMAND_TYPE_vkGetDeviceMemoryOpaqueCaptureAddress_EXT = 177,
     VK_COMMAND_TYPE_vkGetDeviceMemoryOpaqueCaptureAddressKHR_EXT = 177,
+    VK_COMMAND_TYPE_vkSetReplyCommandStreamMESA_EXT = 178,
+    VK_COMMAND_TYPE_vkSeekReplyCommandStreamMESA_EXT = 179,
+    VK_COMMAND_TYPE_vkExecuteCommandStreamsMESA_EXT = 180,
+    VK_COMMAND_TYPE_vkCmdBindTransformFeedbackBuffersEXT_EXT = 181,
+    VK_COMMAND_TYPE_vkCmdBeginTransformFeedbackEXT_EXT = 182,
+    VK_COMMAND_TYPE_vkCmdEndTransformFeedbackEXT_EXT = 183,
+    VK_COMMAND_TYPE_vkCmdBeginQueryIndexedEXT_EXT = 184,
+    VK_COMMAND_TYPE_vkCmdEndQueryIndexedEXT_EXT = 185,
+    VK_COMMAND_TYPE_vkCmdDrawIndirectByteCountEXT_EXT = 186,
+    VK_COMMAND_TYPE_vkGetImageDrmFormatModifierPropertiesEXT_EXT = 187,
+    VK_COMMAND_TYPE_vkCreateRingMESA_EXT = 188,
+    VK_COMMAND_TYPE_vkDestroyRingMESA_EXT = 189,
+    VK_COMMAND_TYPE_vkNotifyRingMESA_EXT = 190,
+    VK_COMMAND_TYPE_vkWriteRingExtraMESA_EXT = 191,
+    VK_COMMAND_TYPE_vkGetMemoryResourcePropertiesMESA_EXT = 192,
+    VK_COMMAND_TYPE_vkGetMemoryFdKHR_EXT = 193,
+    VK_COMMAND_TYPE_vkGetMemoryFdPropertiesKHR_EXT = 194,
     VK_COMMAND_TYPE_vkGetPhysicalDeviceToolProperties_EXT = 196,
     VK_COMMAND_TYPE_vkGetPhysicalDeviceToolPropertiesEXT_EXT = 196,
     VK_COMMAND_TYPE_vkCreatePrivateDataSlot_EXT = 197,
@@ -322,34 +342,35 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkGetDeviceImageMemoryRequirementsKHR_EXT = 231,
     VK_COMMAND_TYPE_vkGetDeviceImageSparseMemoryRequirements_EXT = 232,
     VK_COMMAND_TYPE_vkGetDeviceImageSparseMemoryRequirementsKHR_EXT = 232,
-    VK_COMMAND_TYPE_vkCmdBindTransformFeedbackBuffersEXT_EXT = 181,
-    VK_COMMAND_TYPE_vkCmdBeginTransformFeedbackEXT_EXT = 182,
-    VK_COMMAND_TYPE_vkCmdEndTransformFeedbackEXT_EXT = 183,
-    VK_COMMAND_TYPE_vkCmdBeginQueryIndexedEXT_EXT = 184,
-    VK_COMMAND_TYPE_vkCmdEndQueryIndexedEXT_EXT = 185,
-    VK_COMMAND_TYPE_vkCmdDrawIndirectByteCountEXT_EXT = 186,
-    VK_COMMAND_TYPE_vkGetMemoryFdKHR_EXT = 193,
-    VK_COMMAND_TYPE_vkGetMemoryFdPropertiesKHR_EXT = 194,
-    VK_COMMAND_TYPE_vkImportSemaphoreFdKHR_EXT = 242,
-    VK_COMMAND_TYPE_vkGetSemaphoreFdKHR_EXT = 243,
-    VK_COMMAND_TYPE_vkCmdPushDescriptorSetKHR_EXT = 249,
-    VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplateKHR_EXT = 250,
-    VK_COMMAND_TYPE_vkCmdBeginConditionalRenderingEXT_EXT = 240,
-    VK_COMMAND_TYPE_vkCmdEndConditionalRenderingEXT_EXT = 241,
-    VK_COMMAND_TYPE_vkImportFenceFdKHR_EXT = 238,
-    VK_COMMAND_TYPE_vkGetFenceFdKHR_EXT = 239,
-    VK_COMMAND_TYPE_vkGetImageDrmFormatModifierPropertiesEXT_EXT = 187,
-    VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT_EXT = 235,
-    VK_COMMAND_TYPE_vkGetCalibratedTimestampsEXT_EXT = 236,
-    VK_COMMAND_TYPE_vkGetPhysicalDeviceFragmentShadingRatesKHR_EXT = 277,
-    VK_COMMAND_TYPE_vkCmdSetFragmentShadingRateKHR_EXT = 278,
-    VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT = 237,
-    VK_COMMAND_TYPE_vkCmdSetVertexInputEXT_EXT = 255,
     VK_COMMAND_TYPE_vkCmdSetPatchControlPointsEXT_EXT = 233,
     VK_COMMAND_TYPE_vkCmdSetLogicOpEXT_EXT = 234,
-    VK_COMMAND_TYPE_vkCmdSetColorWriteEnableEXT_EXT = 254,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR_EXT = 235,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT_EXT = 235,
+    VK_COMMAND_TYPE_vkGetCalibratedTimestampsKHR_EXT = 236,
+    VK_COMMAND_TYPE_vkGetCalibratedTimestampsEXT_EXT = 236,
+    VK_COMMAND_TYPE_vkCmdSetLineStipple_EXT = 237,
+    VK_COMMAND_TYPE_vkCmdSetLineStippleKHR_EXT = 237,
+    VK_COMMAND_TYPE_vkCmdSetLineStippleEXT_EXT = 237,
+    VK_COMMAND_TYPE_vkImportFenceFdKHR_EXT = 238,
+    VK_COMMAND_TYPE_vkGetFenceFdKHR_EXT = 239,
+    VK_COMMAND_TYPE_vkCmdBeginConditionalRenderingEXT_EXT = 240,
+    VK_COMMAND_TYPE_vkCmdEndConditionalRenderingEXT_EXT = 241,
+    VK_COMMAND_TYPE_vkImportSemaphoreFdKHR_EXT = 242,
+    VK_COMMAND_TYPE_vkGetSemaphoreFdKHR_EXT = 243,
+    VK_COMMAND_TYPE_vkResetFenceResourceMESA_EXT = 244,
+    VK_COMMAND_TYPE_vkWaitSemaphoreResourceMESA_EXT = 245,
+    VK_COMMAND_TYPE_vkImportSemaphoreResourceMESA_EXT = 246,
     VK_COMMAND_TYPE_vkCmdDrawMultiEXT_EXT = 247,
     VK_COMMAND_TYPE_vkCmdDrawMultiIndexedEXT_EXT = 248,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSet_EXT = 249,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSetKHR_EXT = 249,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplate_EXT = 250,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplateKHR_EXT = 250,
+    VK_COMMAND_TYPE_vkSubmitVirtqueueSeqnoMESA_EXT = 251,
+    VK_COMMAND_TYPE_vkWaitVirtqueueSeqnoMESA_EXT = 252,
+    VK_COMMAND_TYPE_vkWaitRingSeqnoMESA_EXT = 253,
+    VK_COMMAND_TYPE_vkCmdSetColorWriteEnableEXT_EXT = 254,
+    VK_COMMAND_TYPE_vkCmdSetVertexInputEXT_EXT = 255,
     VK_COMMAND_TYPE_vkCmdSetTessellationDomainOriginEXT_EXT = 256,
     VK_COMMAND_TYPE_vkCmdSetDepthClampEnableEXT_EXT = 257,
     VK_COMMAND_TYPE_vkCmdSetPolygonModeEXT_EXT = 258,
@@ -371,25 +392,82 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkCmdSetLineRasterizationModeEXT_EXT = 274,
     VK_COMMAND_TYPE_vkCmdSetLineStippleEnableEXT_EXT = 275,
     VK_COMMAND_TYPE_vkCmdSetDepthClipNegativeOneToOneEXT_EXT = 276,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceFragmentShadingRatesKHR_EXT = 277,
+    VK_COMMAND_TYPE_vkCmdSetFragmentShadingRateKHR_EXT = 278,
+    VK_COMMAND_TYPE_vkCmdBindIndexBuffer2_EXT = 279,
     VK_COMMAND_TYPE_vkCmdBindIndexBuffer2KHR_EXT = 279,
+    VK_COMMAND_TYPE_vkGetRenderingAreaGranularity_EXT = 280,
     VK_COMMAND_TYPE_vkGetRenderingAreaGranularityKHR_EXT = 280,
+    VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayout_EXT = 281,
     VK_COMMAND_TYPE_vkGetDeviceImageSubresourceLayoutKHR_EXT = 281,
+    VK_COMMAND_TYPE_vkGetImageSubresourceLayout2_EXT = 282,
     VK_COMMAND_TYPE_vkGetImageSubresourceLayout2KHR_EXT = 282,
     VK_COMMAND_TYPE_vkGetImageSubresourceLayout2EXT_EXT = 282,
-    VK_COMMAND_TYPE_vkSetReplyCommandStreamMESA_EXT = 178,
-    VK_COMMAND_TYPE_vkSeekReplyCommandStreamMESA_EXT = 179,
-    VK_COMMAND_TYPE_vkExecuteCommandStreamsMESA_EXT = 180,
-    VK_COMMAND_TYPE_vkCreateRingMESA_EXT = 188,
-    VK_COMMAND_TYPE_vkDestroyRingMESA_EXT = 189,
-    VK_COMMAND_TYPE_vkNotifyRingMESA_EXT = 190,
-    VK_COMMAND_TYPE_vkWriteRingExtraMESA_EXT = 191,
-    VK_COMMAND_TYPE_vkGetMemoryResourcePropertiesMESA_EXT = 192,
-    VK_COMMAND_TYPE_vkResetFenceResourceMESA_EXT = 244,
-    VK_COMMAND_TYPE_vkWaitSemaphoreResourceMESA_EXT = 245,
-    VK_COMMAND_TYPE_vkImportSemaphoreResourceMESA_EXT = 246,
-    VK_COMMAND_TYPE_vkSubmitVirtqueueSeqnoMESA_EXT = 251,
-    VK_COMMAND_TYPE_vkWaitVirtqueueSeqnoMESA_EXT = 252,
-    VK_COMMAND_TYPE_vkWaitRingSeqnoMESA_EXT = 253,
+    VK_COMMAND_TYPE_vkCmdSetSampleLocationsEXT_EXT = 283,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceMultisamplePropertiesEXT_EXT = 284,
+    VK_COMMAND_TYPE_vkMapMemory2_EXT = 285,
+    VK_COMMAND_TYPE_vkMapMemory2KHR_EXT = 285,
+    VK_COMMAND_TYPE_vkUnmapMemory2_EXT = 286,
+    VK_COMMAND_TYPE_vkUnmapMemory2KHR_EXT = 286,
+    VK_COMMAND_TYPE_vkCmdSetRenderingAttachmentLocations_EXT = 287,
+    VK_COMMAND_TYPE_vkCmdSetRenderingAttachmentLocationsKHR_EXT = 287,
+    VK_COMMAND_TYPE_vkCmdSetRenderingInputAttachmentIndices_EXT = 288,
+    VK_COMMAND_TYPE_vkCmdSetRenderingInputAttachmentIndicesKHR_EXT = 288,
+    VK_COMMAND_TYPE_vkCmdBindDescriptorSets2_EXT = 289,
+    VK_COMMAND_TYPE_vkCmdBindDescriptorSets2KHR_EXT = 289,
+    VK_COMMAND_TYPE_vkCmdPushConstants2_EXT = 290,
+    VK_COMMAND_TYPE_vkCmdPushConstants2KHR_EXT = 290,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSet2_EXT = 291,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSet2KHR_EXT = 291,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplate2_EXT = 292,
+    VK_COMMAND_TYPE_vkCmdPushDescriptorSetWithTemplate2KHR_EXT = 292,
+    VK_COMMAND_TYPE_vkCopyMemoryToImage_EXT = 293,
+    VK_COMMAND_TYPE_vkCopyMemoryToImageEXT_EXT = 293,
+    VK_COMMAND_TYPE_vkCopyImageToMemory_EXT = 294,
+    VK_COMMAND_TYPE_vkCopyImageToMemoryEXT_EXT = 294,
+    VK_COMMAND_TYPE_vkCopyImageToImage_EXT = 295,
+    VK_COMMAND_TYPE_vkCopyImageToImageEXT_EXT = 295,
+    VK_COMMAND_TYPE_vkTransitionImageLayout_EXT = 296,
+    VK_COMMAND_TYPE_vkTransitionImageLayoutEXT_EXT = 296,
+    VK_COMMAND_TYPE_vkCopyImageToMemoryMESA_EXT = 297,
+    VK_COMMAND_TYPE_vkCopyMemoryToImageMESA_EXT = 298,
+    VK_COMMAND_TYPE_vkCreateDeferredOperationKHR_EXT = 299,
+    VK_COMMAND_TYPE_vkDestroyDeferredOperationKHR_EXT = 300,
+    VK_COMMAND_TYPE_vkGetDeferredOperationMaxConcurrencyKHR_EXT = 301,
+    VK_COMMAND_TYPE_vkGetDeferredOperationResultKHR_EXT = 302,
+    VK_COMMAND_TYPE_vkDeferredOperationJoinKHR_EXT = 303,
+    VK_COMMAND_TYPE_vkCreateAccelerationStructureKHR_EXT = 304,
+    VK_COMMAND_TYPE_vkDestroyAccelerationStructureKHR_EXT = 305,
+    VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresKHR_EXT = 306,
+    VK_COMMAND_TYPE_vkCmdBuildAccelerationStructuresIndirectKHR_EXT = 307,
+    VK_COMMAND_TYPE_vkBuildAccelerationStructuresKHR_EXT = 308,
+    VK_COMMAND_TYPE_vkCopyAccelerationStructureKHR_EXT = 309,
+    VK_COMMAND_TYPE_vkCopyAccelerationStructureToMemoryKHR_EXT = 310,
+    VK_COMMAND_TYPE_vkCopyMemoryToAccelerationStructureKHR_EXT = 311,
+    VK_COMMAND_TYPE_vkWriteAccelerationStructuresPropertiesKHR_EXT = 312,
+    VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureKHR_EXT = 313,
+    VK_COMMAND_TYPE_vkCmdCopyAccelerationStructureToMemoryKHR_EXT = 314,
+    VK_COMMAND_TYPE_vkCmdCopyMemoryToAccelerationStructureKHR_EXT = 315,
+    VK_COMMAND_TYPE_vkGetAccelerationStructureDeviceAddressKHR_EXT = 316,
+    VK_COMMAND_TYPE_vkCmdWriteAccelerationStructuresPropertiesKHR_EXT = 317,
+    VK_COMMAND_TYPE_vkGetDeviceAccelerationStructureCompatibilityKHR_EXT = 318,
+    VK_COMMAND_TYPE_vkGetAccelerationStructureBuildSizesKHR_EXT = 319,
+    VK_COMMAND_TYPE_vkCmdTraceRaysKHR_EXT = 320,
+    VK_COMMAND_TYPE_vkCreateRayTracingPipelinesKHR_EXT = 321,
+    VK_COMMAND_TYPE_vkGetRayTracingShaderGroupHandlesKHR_EXT = 322,
+    VK_COMMAND_TYPE_vkGetRayTracingShaderGroupHandlesNV_EXT = 322,
+    VK_COMMAND_TYPE_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR_EXT = 323,
+    VK_COMMAND_TYPE_vkCmdTraceRaysIndirectKHR_EXT = 324,
+    VK_COMMAND_TYPE_vkGetRayTracingShaderGroupStackSizeKHR_EXT = 325,
+    VK_COMMAND_TYPE_vkCmdSetRayTracingPipelineStackSizeKHR_EXT = 326,
+    VK_COMMAND_TYPE_vkCmdTraceRaysIndirect2KHR_EXT = 327,
+    VK_COMMAND_TYPE_vkCmdSetDepthBias2EXT_EXT = 328,
+    VK_COMMAND_TYPE_vkCmdSetAttachmentFeedbackLoopEnableEXT_EXT = 329,
+    VK_COMMAND_TYPE_vkCmdSetDepthClampRangeEXT_EXT = 330,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR_EXT = 331,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksEXT_EXT = 332,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectEXT_EXT = 333,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectCountEXT_EXT = 334,
 } VkCommandTypeEXT;
 
 typedef enum VkCommandFlagBitsEXT {
@@ -447,12 +525,6 @@ typedef struct VkRingMonitorInfoMESA {
     uint32_t maxReportingPeriodMicroseconds;
 } VkRingMonitorInfoMESA;
 
-typedef struct VkRingPriorityInfoMESA {
-    VkStructureType sType;
-    const void* pNext;
-    int32_t priority;
-} VkRingPriorityInfoMESA;
-
 typedef struct VkMemoryResourcePropertiesMESA {
     VkStructureType sType;
     void* pNext;
@@ -483,6 +555,47 @@ typedef struct VkDeviceQueueTimelineInfoMESA {
     const void* pNext;
     uint32_t ringIdx;
 } VkDeviceQueueTimelineInfoMESA;
+
+typedef struct VkRingPriorityInfoMESA {
+    VkStructureType sType;
+    const void* pNext;
+    int32_t priority;
+} VkRingPriorityInfoMESA;
+
+typedef struct VkCopyImageToMemoryInfoMESA {
+    VkStructureType sType;
+    const void* pNext;
+    VkHostImageCopyFlags flags;
+    VkImage srcImage;
+    VkImageLayout srcImageLayout;
+    uint32_t memoryRowLength;
+    uint32_t memoryImageHeight;
+    VkImageSubresourceLayers imageSubresource;
+    VkOffset3D imageOffset;
+    VkExtent3D imageExtent;
+} VkCopyImageToMemoryInfoMESA;
+
+typedef struct VkMemoryToImageCopyMESA {
+    VkStructureType sType;
+    const void* pNext;
+    size_t dataSize;
+    const void* pData;
+    uint32_t memoryRowLength;
+    uint32_t memoryImageHeight;
+    VkImageSubresourceLayers imageSubresource;
+    VkOffset3D imageOffset;
+    VkExtent3D imageExtent;
+} VkMemoryToImageCopyMESA;
+
+typedef struct VkCopyMemoryToImageInfoMESA {
+    VkStructureType sType;
+    const void* pNext;
+    VkHostImageCopyFlags flags;
+    VkImage dstImage;
+    VkImageLayout dstImageLayout;
+    uint32_t regionCount;
+    const VkMemoryToImageCopyMESA* pRegions;
+} VkCopyMemoryToImageInfoMESA;
 
 struct vn_command_vkCreateInstance {
     const VkInstanceCreateInfo* pCreateInfo;
@@ -1146,9 +1259,9 @@ struct vn_command_vkGetRenderAreaGranularity {
     VkExtent2D* pGranularity;
 };
 
-struct vn_command_vkGetRenderingAreaGranularityKHR {
+struct vn_command_vkGetRenderingAreaGranularity {
     VkDevice device;
-    const VkRenderingAreaInfoKHR* pRenderingAreaInfo;
+    const VkRenderingAreaInfo* pRenderingAreaInfo;
     VkExtent2D* pGranularity;
 };
 
@@ -1214,6 +1327,11 @@ struct vn_command_vkCmdBindPipeline {
     VkCommandBuffer commandBuffer;
     VkPipelineBindPoint pipelineBindPoint;
     VkPipeline pipeline;
+};
+
+struct vn_command_vkCmdSetAttachmentFeedbackLoopEnableEXT {
+    VkCommandBuffer commandBuffer;
+    VkImageAspectFlags aspectMask;
 };
 
 struct vn_command_vkCmdSetViewport {
@@ -1619,7 +1737,7 @@ struct vn_command_vkGetPhysicalDeviceSparseImageFormatProperties2 {
     VkSparseImageFormatProperties2* pProperties;
 };
 
-struct vn_command_vkCmdPushDescriptorSetKHR {
+struct vn_command_vkCmdPushDescriptorSet {
     VkCommandBuffer commandBuffer;
     VkPipelineBindPoint pipelineBindPoint;
     VkPipelineLayout layout;
@@ -1768,12 +1886,23 @@ struct vn_command_vkUpdateDescriptorSetWithTemplate {
     const void* pData;
 };
 
-struct vn_command_vkCmdPushDescriptorSetWithTemplateKHR {
+struct vn_command_vkCmdPushDescriptorSetWithTemplate {
     VkCommandBuffer commandBuffer;
     VkDescriptorUpdateTemplate descriptorUpdateTemplate;
     VkPipelineLayout layout;
     uint32_t set;
     const void* pData;
+};
+
+struct vn_command_vkCmdSetSampleLocationsEXT {
+    VkCommandBuffer commandBuffer;
+    const VkSampleLocationsInfoEXT* pSampleLocationsInfo;
+};
+
+struct vn_command_vkGetPhysicalDeviceMultisamplePropertiesEXT {
+    VkPhysicalDevice physicalDevice;
+    VkSampleCountFlagBits samples;
+    VkMultisamplePropertiesEXT* pMultisampleProperties;
 };
 
 struct vn_command_vkGetBufferMemoryRequirements2 {
@@ -1841,18 +1970,18 @@ struct vn_command_vkGetDescriptorSetLayoutSupport {
     VkDescriptorSetLayoutSupport* pSupport;
 };
 
-struct vn_command_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT {
+struct vn_command_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR {
     VkPhysicalDevice physicalDevice;
     uint32_t* pTimeDomainCount;
-    VkTimeDomainEXT* pTimeDomains;
+    VkTimeDomainKHR* pTimeDomains;
 
     VkResult ret;
 };
 
-struct vn_command_vkGetCalibratedTimestampsEXT {
+struct vn_command_vkGetCalibratedTimestampsKHR {
     VkDevice device;
     uint32_t timestampCount;
-    const VkCalibratedTimestampInfoEXT* pTimestampInfos;
+    const VkCalibratedTimestampInfoKHR* pTimestampInfos;
     uint64_t* pTimestamps;
     uint64_t* pMaxDeviation;
 
@@ -1978,6 +2107,176 @@ struct vn_command_vkCmdDrawIndirectByteCountEXT {
     uint32_t vertexStride;
 };
 
+struct vn_command_vkCmdDrawMeshTasksEXT {
+    VkCommandBuffer commandBuffer;
+    uint32_t groupCountX;
+    uint32_t groupCountY;
+    uint32_t groupCountZ;
+};
+
+struct vn_command_vkCmdDrawMeshTasksIndirectEXT {
+    VkCommandBuffer commandBuffer;
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    uint32_t drawCount;
+    uint32_t stride;
+};
+
+struct vn_command_vkCmdDrawMeshTasksIndirectCountEXT {
+    VkCommandBuffer commandBuffer;
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    VkBuffer countBuffer;
+    VkDeviceSize countBufferOffset;
+    uint32_t maxDrawCount;
+    uint32_t stride;
+};
+
+struct vn_command_vkDestroyAccelerationStructureKHR {
+    VkDevice device;
+    VkAccelerationStructureKHR accelerationStructure;
+    const VkAllocationCallbacks* pAllocator;
+};
+
+struct vn_command_vkCmdCopyAccelerationStructureKHR {
+    VkCommandBuffer commandBuffer;
+    const VkCopyAccelerationStructureInfoKHR* pInfo;
+};
+
+struct vn_command_vkCopyAccelerationStructureKHR {
+    VkDevice device;
+    VkDeferredOperationKHR deferredOperation;
+    const VkCopyAccelerationStructureInfoKHR* pInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdCopyAccelerationStructureToMemoryKHR {
+    VkCommandBuffer commandBuffer;
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo;
+};
+
+struct vn_command_vkCopyAccelerationStructureToMemoryKHR {
+    VkDevice device;
+    VkDeferredOperationKHR deferredOperation;
+    const VkCopyAccelerationStructureToMemoryInfoKHR* pInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdCopyMemoryToAccelerationStructureKHR {
+    VkCommandBuffer commandBuffer;
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo;
+};
+
+struct vn_command_vkCopyMemoryToAccelerationStructureKHR {
+    VkDevice device;
+    VkDeferredOperationKHR deferredOperation;
+    const VkCopyMemoryToAccelerationStructureInfoKHR* pInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdWriteAccelerationStructuresPropertiesKHR {
+    VkCommandBuffer commandBuffer;
+    uint32_t accelerationStructureCount;
+    const VkAccelerationStructureKHR* pAccelerationStructures;
+    VkQueryType queryType;
+    VkQueryPool queryPool;
+    uint32_t firstQuery;
+};
+
+struct vn_command_vkWriteAccelerationStructuresPropertiesKHR {
+    VkDevice device;
+    uint32_t accelerationStructureCount;
+    const VkAccelerationStructureKHR* pAccelerationStructures;
+    VkQueryType queryType;
+    size_t dataSize;
+    void* pData;
+    size_t stride;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdTraceRaysKHR {
+    VkCommandBuffer commandBuffer;
+    const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable;
+    uint32_t width;
+    uint32_t height;
+    uint32_t depth;
+};
+
+struct vn_command_vkGetRayTracingShaderGroupHandlesKHR {
+    VkDevice device;
+    VkPipeline pipeline;
+    uint32_t firstGroup;
+    uint32_t groupCount;
+    size_t dataSize;
+    void* pData;
+
+    VkResult ret;
+};
+
+struct vn_command_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR {
+    VkDevice device;
+    VkPipeline pipeline;
+    uint32_t firstGroup;
+    uint32_t groupCount;
+    size_t dataSize;
+    void* pData;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCreateRayTracingPipelinesKHR {
+    VkDevice device;
+    VkDeferredOperationKHR deferredOperation;
+    VkPipelineCache pipelineCache;
+    uint32_t createInfoCount;
+    const VkRayTracingPipelineCreateInfoKHR* pCreateInfos;
+    const VkAllocationCallbacks* pAllocator;
+    VkPipeline* pPipelines;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdTraceRaysIndirectKHR {
+    VkCommandBuffer commandBuffer;
+    const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable;
+    const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable;
+    VkDeviceAddress indirectDeviceAddress;
+};
+
+struct vn_command_vkCmdTraceRaysIndirect2KHR {
+    VkCommandBuffer commandBuffer;
+    VkDeviceAddress indirectDeviceAddress;
+};
+
+struct vn_command_vkGetDeviceAccelerationStructureCompatibilityKHR {
+    VkDevice device;
+    const VkAccelerationStructureVersionInfoKHR* pVersionInfo;
+    VkAccelerationStructureCompatibilityKHR* pCompatibility;
+};
+
+struct vn_command_vkGetRayTracingShaderGroupStackSizeKHR {
+    VkDevice device;
+    VkPipeline pipeline;
+    uint32_t group;
+    VkShaderGroupShaderKHR groupShader;
+
+    VkDeviceSize ret;
+};
+
+struct vn_command_vkCmdSetRayTracingPipelineStackSizeKHR {
+    VkCommandBuffer commandBuffer;
+    uint32_t pipelineStackSize;
+};
+
 struct vn_command_vkGetImageDrmFormatModifierPropertiesEXT {
     VkDevice device;
     VkImage image;
@@ -2007,7 +2306,7 @@ struct vn_command_vkGetDeviceMemoryOpaqueCaptureAddress {
     uint64_t ret;
 };
 
-struct vn_command_vkCmdSetLineStippleEXT {
+struct vn_command_vkCmdSetLineStipple {
     VkCommandBuffer commandBuffer;
     uint32_t lineStippleFactor;
     uint16_t lineStipplePattern;
@@ -2017,6 +2316,83 @@ struct vn_command_vkGetPhysicalDeviceToolProperties {
     VkPhysicalDevice physicalDevice;
     uint32_t* pToolCount;
     VkPhysicalDeviceToolProperties* pToolProperties;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCreateAccelerationStructureKHR {
+    VkDevice device;
+    const VkAccelerationStructureCreateInfoKHR* pCreateInfo;
+    const VkAllocationCallbacks* pAllocator;
+    VkAccelerationStructureKHR* pAccelerationStructure;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdBuildAccelerationStructuresKHR {
+    VkCommandBuffer commandBuffer;
+    uint32_t infoCount;
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos;
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos;
+};
+
+struct vn_command_vkCmdBuildAccelerationStructuresIndirectKHR {
+    VkCommandBuffer commandBuffer;
+    uint32_t infoCount;
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos;
+    const VkDeviceAddress* pIndirectDeviceAddresses;
+    const uint32_t* pIndirectStrides;
+    const uint32_t* const* ppMaxPrimitiveCounts;
+};
+
+struct vn_command_vkBuildAccelerationStructuresKHR {
+    VkDevice device;
+    VkDeferredOperationKHR deferredOperation;
+    uint32_t infoCount;
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos;
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos;
+
+    VkResult ret;
+};
+
+struct vn_command_vkGetAccelerationStructureDeviceAddressKHR {
+    VkDevice device;
+    const VkAccelerationStructureDeviceAddressInfoKHR* pInfo;
+
+    VkDeviceAddress ret;
+};
+
+struct vn_command_vkCreateDeferredOperationKHR {
+    VkDevice device;
+    const VkAllocationCallbacks* pAllocator;
+    VkDeferredOperationKHR* pDeferredOperation;
+
+    VkResult ret;
+};
+
+struct vn_command_vkDestroyDeferredOperationKHR {
+    VkDevice device;
+    VkDeferredOperationKHR operation;
+    const VkAllocationCallbacks* pAllocator;
+};
+
+struct vn_command_vkGetDeferredOperationMaxConcurrencyKHR {
+    VkDevice device;
+    VkDeferredOperationKHR operation;
+
+    uint32_t ret;
+};
+
+struct vn_command_vkGetDeferredOperationResultKHR {
+    VkDevice device;
+    VkDeferredOperationKHR operation;
+
+    VkResult ret;
+};
+
+struct vn_command_vkDeferredOperationJoinKHR {
+    VkDevice device;
+    VkDeferredOperationKHR operation;
 
     VkResult ret;
 };
@@ -2048,7 +2424,7 @@ struct vn_command_vkCmdSetScissorWithCount {
     const VkRect2D* pScissors;
 };
 
-struct vn_command_vkCmdBindIndexBuffer2KHR {
+struct vn_command_vkCmdBindIndexBuffer2 {
     VkCommandBuffer commandBuffer;
     VkBuffer buffer;
     VkDeviceSize offset;
@@ -2226,7 +2602,7 @@ struct vn_command_vkCmdSetProvokingVertexModeEXT {
 
 struct vn_command_vkCmdSetLineRasterizationModeEXT {
     VkCommandBuffer commandBuffer;
-    VkLineRasterizationModeEXT lineRasterizationMode;
+    VkLineRasterizationMode lineRasterizationMode;
 };
 
 struct vn_command_vkCmdSetLineStippleEnableEXT {
@@ -2316,6 +2692,14 @@ struct vn_command_vkGetPhysicalDeviceFragmentShadingRatesKHR {
     VkResult ret;
 };
 
+struct vn_command_vkGetAccelerationStructureBuildSizesKHR {
+    VkDevice device;
+    VkAccelerationStructureBuildTypeKHR buildType;
+    const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo;
+    const uint32_t* pMaxPrimitiveCounts;
+    VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo;
+};
+
 struct vn_command_vkCmdSetVertexInputEXT {
     VkCommandBuffer commandBuffer;
     uint32_t vertexBindingDescriptionCount;
@@ -2370,6 +2754,35 @@ struct vn_command_vkCmdWriteTimestamp2 {
     uint32_t query;
 };
 
+struct vn_command_vkCopyMemoryToImage {
+    VkDevice device;
+    const VkCopyMemoryToImageInfo* pCopyMemoryToImageInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCopyImageToMemory {
+    VkDevice device;
+    const VkCopyImageToMemoryInfo* pCopyImageToMemoryInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCopyImageToImage {
+    VkDevice device;
+    const VkCopyImageToImageInfo* pCopyImageToImageInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkTransitionImageLayout {
+    VkDevice device;
+    uint32_t transitionCount;
+    const VkHostImageLayoutTransitionInfo* pTransitions;
+
+    VkResult ret;
+};
+
 struct vn_command_vkCmdBeginRendering {
     VkCommandBuffer commandBuffer;
     const VkRenderingInfo* pRenderingInfo;
@@ -2379,17 +2792,81 @@ struct vn_command_vkCmdEndRendering {
     VkCommandBuffer commandBuffer;
 };
 
-struct vn_command_vkGetImageSubresourceLayout2KHR {
+struct vn_command_vkGetImageSubresourceLayout2 {
     VkDevice device;
     VkImage image;
-    const VkImageSubresource2KHR* pSubresource;
-    VkSubresourceLayout2KHR* pLayout;
+    const VkImageSubresource2* pSubresource;
+    VkSubresourceLayout2* pLayout;
 };
 
-struct vn_command_vkGetDeviceImageSubresourceLayoutKHR {
+struct vn_command_vkCmdSetDepthBias2EXT {
+    VkCommandBuffer commandBuffer;
+    const VkDepthBiasInfoEXT* pDepthBiasInfo;
+};
+
+struct vn_command_vkGetDeviceImageSubresourceLayout {
     VkDevice device;
-    const VkDeviceImageSubresourceInfoKHR* pInfo;
-    VkSubresourceLayout2KHR* pLayout;
+    const VkDeviceImageSubresourceInfo* pInfo;
+    VkSubresourceLayout2* pLayout;
+};
+
+struct vn_command_vkMapMemory2 {
+    VkDevice device;
+    const VkMemoryMapInfo* pMemoryMapInfo;
+    void** ppData;
+
+    VkResult ret;
+};
+
+struct vn_command_vkUnmapMemory2 {
+    VkDevice device;
+    const VkMemoryUnmapInfo* pMemoryUnmapInfo;
+
+    VkResult ret;
+};
+
+struct vn_command_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR {
+    VkPhysicalDevice physicalDevice;
+    uint32_t* pPropertyCount;
+    VkCooperativeMatrixPropertiesKHR* pProperties;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCmdBindDescriptorSets2 {
+    VkCommandBuffer commandBuffer;
+    const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo;
+};
+
+struct vn_command_vkCmdPushConstants2 {
+    VkCommandBuffer commandBuffer;
+    const VkPushConstantsInfo* pPushConstantsInfo;
+};
+
+struct vn_command_vkCmdPushDescriptorSet2 {
+    VkCommandBuffer commandBuffer;
+    const VkPushDescriptorSetInfo* pPushDescriptorSetInfo;
+};
+
+struct vn_command_vkCmdPushDescriptorSetWithTemplate2 {
+    VkCommandBuffer commandBuffer;
+    const VkPushDescriptorSetWithTemplateInfo* pPushDescriptorSetWithTemplateInfo;
+};
+
+struct vn_command_vkCmdSetRenderingAttachmentLocations {
+    VkCommandBuffer commandBuffer;
+    const VkRenderingAttachmentLocationInfo* pLocationInfo;
+};
+
+struct vn_command_vkCmdSetRenderingInputAttachmentIndices {
+    VkCommandBuffer commandBuffer;
+    const VkRenderingInputAttachmentIndexInfo* pInputAttachmentIndexInfo;
+};
+
+struct vn_command_vkCmdSetDepthClampRangeEXT {
+    VkCommandBuffer commandBuffer;
+    VkDepthClampModeEXT depthClampMode;
+    const VkDepthClampRangeEXT* pDepthClampRange;
 };
 
 struct vn_command_vkSetReplyCommandStreamMESA {
@@ -2465,6 +2942,22 @@ struct vn_command_vkWaitVirtqueueSeqnoMESA {
 struct vn_command_vkWaitRingSeqnoMESA {
     uint64_t ring;
     uint64_t seqno;
+};
+
+struct vn_command_vkCopyImageToMemoryMESA {
+    VkDevice device;
+    const VkCopyImageToMemoryInfoMESA* pCopyImageToMemoryInfo;
+    size_t dataSize;
+    void* pData;
+
+    VkResult ret;
+};
+
+struct vn_command_vkCopyMemoryToImageMESA {
+    VkDevice device;
+    const VkCopyMemoryToImageInfoMESA* pCopyMemoryToImageInfo;
+
+    VkResult ret;
 };
 
 struct vn_dispatch_context {
@@ -2561,7 +3054,7 @@ struct vn_dispatch_context {
     void (*dispatch_vkCreateRenderPass)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateRenderPass *args);
     void (*dispatch_vkDestroyRenderPass)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroyRenderPass *args);
     void (*dispatch_vkGetRenderAreaGranularity)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRenderAreaGranularity *args);
-    void (*dispatch_vkGetRenderingAreaGranularityKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRenderingAreaGranularityKHR *args);
+    void (*dispatch_vkGetRenderingAreaGranularity)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRenderingAreaGranularity *args);
     void (*dispatch_vkCreateCommandPool)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateCommandPool *args);
     void (*dispatch_vkDestroyCommandPool)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroyCommandPool *args);
     void (*dispatch_vkResetCommandPool)(struct vn_dispatch_context *ctx, struct vn_command_vkResetCommandPool *args);
@@ -2571,6 +3064,7 @@ struct vn_dispatch_context {
     void (*dispatch_vkEndCommandBuffer)(struct vn_dispatch_context *ctx, struct vn_command_vkEndCommandBuffer *args);
     void (*dispatch_vkResetCommandBuffer)(struct vn_dispatch_context *ctx, struct vn_command_vkResetCommandBuffer *args);
     void (*dispatch_vkCmdBindPipeline)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBindPipeline *args);
+    void (*dispatch_vkCmdSetAttachmentFeedbackLoopEnableEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetAttachmentFeedbackLoopEnableEXT *args);
     void (*dispatch_vkCmdSetViewport)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetViewport *args);
     void (*dispatch_vkCmdSetScissor)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetScissor *args);
     void (*dispatch_vkCmdSetLineWidth)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetLineWidth *args);
@@ -2625,7 +3119,7 @@ struct vn_dispatch_context {
     void (*dispatch_vkGetPhysicalDeviceQueueFamilyProperties2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceQueueFamilyProperties2 *args);
     void (*dispatch_vkGetPhysicalDeviceMemoryProperties2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceMemoryProperties2 *args);
     void (*dispatch_vkGetPhysicalDeviceSparseImageFormatProperties2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceSparseImageFormatProperties2 *args);
-    void (*dispatch_vkCmdPushDescriptorSetKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSetKHR *args);
+    void (*dispatch_vkCmdPushDescriptorSet)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSet *args);
     void (*dispatch_vkTrimCommandPool)(struct vn_dispatch_context *ctx, struct vn_command_vkTrimCommandPool *args);
     void (*dispatch_vkGetPhysicalDeviceExternalBufferProperties)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceExternalBufferProperties *args);
     void (*dispatch_vkGetMemoryFdKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetMemoryFdKHR *args);
@@ -2645,7 +3139,9 @@ struct vn_dispatch_context {
     void (*dispatch_vkCreateDescriptorUpdateTemplate)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateDescriptorUpdateTemplate *args);
     void (*dispatch_vkDestroyDescriptorUpdateTemplate)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroyDescriptorUpdateTemplate *args);
     void (*dispatch_vkUpdateDescriptorSetWithTemplate)(struct vn_dispatch_context *ctx, struct vn_command_vkUpdateDescriptorSetWithTemplate *args);
-    void (*dispatch_vkCmdPushDescriptorSetWithTemplateKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSetWithTemplateKHR *args);
+    void (*dispatch_vkCmdPushDescriptorSetWithTemplate)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSetWithTemplate *args);
+    void (*dispatch_vkCmdSetSampleLocationsEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetSampleLocationsEXT *args);
+    void (*dispatch_vkGetPhysicalDeviceMultisamplePropertiesEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceMultisamplePropertiesEXT *args);
     void (*dispatch_vkGetBufferMemoryRequirements2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetBufferMemoryRequirements2 *args);
     void (*dispatch_vkGetImageMemoryRequirements2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetImageMemoryRequirements2 *args);
     void (*dispatch_vkGetImageSparseMemoryRequirements2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetImageSparseMemoryRequirements2 *args);
@@ -2656,8 +3152,8 @@ struct vn_dispatch_context {
     void (*dispatch_vkDestroySamplerYcbcrConversion)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroySamplerYcbcrConversion *args);
     void (*dispatch_vkGetDeviceQueue2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeviceQueue2 *args);
     void (*dispatch_vkGetDescriptorSetLayoutSupport)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDescriptorSetLayoutSupport *args);
-    void (*dispatch_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT *args);
-    void (*dispatch_vkGetCalibratedTimestampsEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkGetCalibratedTimestampsEXT *args);
+    void (*dispatch_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR *args);
+    void (*dispatch_vkGetCalibratedTimestampsKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetCalibratedTimestampsKHR *args);
     void (*dispatch_vkCreateRenderPass2)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateRenderPass2 *args);
     void (*dispatch_vkCmdBeginRenderPass2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBeginRenderPass2 *args);
     void (*dispatch_vkCmdNextSubpass2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdNextSubpass2 *args);
@@ -2673,18 +3169,49 @@ struct vn_dispatch_context {
     void (*dispatch_vkCmdBeginQueryIndexedEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBeginQueryIndexedEXT *args);
     void (*dispatch_vkCmdEndQueryIndexedEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdEndQueryIndexedEXT *args);
     void (*dispatch_vkCmdDrawIndirectByteCountEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdDrawIndirectByteCountEXT *args);
+    void (*dispatch_vkCmdDrawMeshTasksEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdDrawMeshTasksEXT *args);
+    void (*dispatch_vkCmdDrawMeshTasksIndirectEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdDrawMeshTasksIndirectEXT *args);
+    void (*dispatch_vkCmdDrawMeshTasksIndirectCountEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdDrawMeshTasksIndirectCountEXT *args);
+    void (*dispatch_vkDestroyAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroyAccelerationStructureKHR *args);
+    void (*dispatch_vkCmdCopyAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdCopyAccelerationStructureKHR *args);
+    void (*dispatch_vkCopyAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyAccelerationStructureKHR *args);
+    void (*dispatch_vkCmdCopyAccelerationStructureToMemoryKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdCopyAccelerationStructureToMemoryKHR *args);
+    void (*dispatch_vkCopyAccelerationStructureToMemoryKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyAccelerationStructureToMemoryKHR *args);
+    void (*dispatch_vkCmdCopyMemoryToAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdCopyMemoryToAccelerationStructureKHR *args);
+    void (*dispatch_vkCopyMemoryToAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyMemoryToAccelerationStructureKHR *args);
+    void (*dispatch_vkCmdWriteAccelerationStructuresPropertiesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdWriteAccelerationStructuresPropertiesKHR *args);
+    void (*dispatch_vkWriteAccelerationStructuresPropertiesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkWriteAccelerationStructuresPropertiesKHR *args);
+    void (*dispatch_vkCmdTraceRaysKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdTraceRaysKHR *args);
+    void (*dispatch_vkGetRayTracingShaderGroupHandlesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRayTracingShaderGroupHandlesKHR *args);
+    void (*dispatch_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR *args);
+    void (*dispatch_vkCreateRayTracingPipelinesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateRayTracingPipelinesKHR *args);
+    void (*dispatch_vkCmdTraceRaysIndirectKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdTraceRaysIndirectKHR *args);
+    void (*dispatch_vkCmdTraceRaysIndirect2KHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdTraceRaysIndirect2KHR *args);
+    void (*dispatch_vkGetDeviceAccelerationStructureCompatibilityKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeviceAccelerationStructureCompatibilityKHR *args);
+    void (*dispatch_vkGetRayTracingShaderGroupStackSizeKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetRayTracingShaderGroupStackSizeKHR *args);
+    void (*dispatch_vkCmdSetRayTracingPipelineStackSizeKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetRayTracingPipelineStackSizeKHR *args);
     void (*dispatch_vkGetImageDrmFormatModifierPropertiesEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkGetImageDrmFormatModifierPropertiesEXT *args);
     void (*dispatch_vkGetBufferOpaqueCaptureAddress)(struct vn_dispatch_context *ctx, struct vn_command_vkGetBufferOpaqueCaptureAddress *args);
     void (*dispatch_vkGetBufferDeviceAddress)(struct vn_dispatch_context *ctx, struct vn_command_vkGetBufferDeviceAddress *args);
     void (*dispatch_vkGetDeviceMemoryOpaqueCaptureAddress)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeviceMemoryOpaqueCaptureAddress *args);
-    void (*dispatch_vkCmdSetLineStippleEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetLineStippleEXT *args);
+    void (*dispatch_vkCmdSetLineStipple)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetLineStipple *args);
     void (*dispatch_vkGetPhysicalDeviceToolProperties)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceToolProperties *args);
+    void (*dispatch_vkCreateAccelerationStructureKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateAccelerationStructureKHR *args);
+    void (*dispatch_vkCmdBuildAccelerationStructuresKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBuildAccelerationStructuresKHR *args);
+    void (*dispatch_vkCmdBuildAccelerationStructuresIndirectKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBuildAccelerationStructuresIndirectKHR *args);
+    void (*dispatch_vkBuildAccelerationStructuresKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkBuildAccelerationStructuresKHR *args);
+    void (*dispatch_vkGetAccelerationStructureDeviceAddressKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetAccelerationStructureDeviceAddressKHR *args);
+    void (*dispatch_vkCreateDeferredOperationKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCreateDeferredOperationKHR *args);
+    void (*dispatch_vkDestroyDeferredOperationKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkDestroyDeferredOperationKHR *args);
+    void (*dispatch_vkGetDeferredOperationMaxConcurrencyKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeferredOperationMaxConcurrencyKHR *args);
+    void (*dispatch_vkGetDeferredOperationResultKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeferredOperationResultKHR *args);
+    void (*dispatch_vkDeferredOperationJoinKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkDeferredOperationJoinKHR *args);
     void (*dispatch_vkCmdSetCullMode)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetCullMode *args);
     void (*dispatch_vkCmdSetFrontFace)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetFrontFace *args);
     void (*dispatch_vkCmdSetPrimitiveTopology)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetPrimitiveTopology *args);
     void (*dispatch_vkCmdSetViewportWithCount)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetViewportWithCount *args);
     void (*dispatch_vkCmdSetScissorWithCount)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetScissorWithCount *args);
-    void (*dispatch_vkCmdBindIndexBuffer2KHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBindIndexBuffer2KHR *args);
+    void (*dispatch_vkCmdBindIndexBuffer2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBindIndexBuffer2 *args);
     void (*dispatch_vkCmdBindVertexBuffers2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBindVertexBuffers2 *args);
     void (*dispatch_vkCmdSetDepthTestEnable)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetDepthTestEnable *args);
     void (*dispatch_vkCmdSetDepthWriteEnable)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetDepthWriteEnable *args);
@@ -2730,6 +3257,7 @@ struct vn_dispatch_context {
     void (*dispatch_vkCmdResolveImage2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdResolveImage2 *args);
     void (*dispatch_vkCmdSetFragmentShadingRateKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetFragmentShadingRateKHR *args);
     void (*dispatch_vkGetPhysicalDeviceFragmentShadingRatesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceFragmentShadingRatesKHR *args);
+    void (*dispatch_vkGetAccelerationStructureBuildSizesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetAccelerationStructureBuildSizesKHR *args);
     void (*dispatch_vkCmdSetVertexInputEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetVertexInputEXT *args);
     void (*dispatch_vkCmdSetColorWriteEnableEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetColorWriteEnableEXT *args);
     void (*dispatch_vkCmdSetEvent2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetEvent2 *args);
@@ -2738,10 +3266,25 @@ struct vn_dispatch_context {
     void (*dispatch_vkCmdPipelineBarrier2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPipelineBarrier2 *args);
     void (*dispatch_vkQueueSubmit2)(struct vn_dispatch_context *ctx, struct vn_command_vkQueueSubmit2 *args);
     void (*dispatch_vkCmdWriteTimestamp2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdWriteTimestamp2 *args);
+    void (*dispatch_vkCopyMemoryToImage)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyMemoryToImage *args);
+    void (*dispatch_vkCopyImageToMemory)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyImageToMemory *args);
+    void (*dispatch_vkCopyImageToImage)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyImageToImage *args);
+    void (*dispatch_vkTransitionImageLayout)(struct vn_dispatch_context *ctx, struct vn_command_vkTransitionImageLayout *args);
     void (*dispatch_vkCmdBeginRendering)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBeginRendering *args);
     void (*dispatch_vkCmdEndRendering)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdEndRendering *args);
-    void (*dispatch_vkGetImageSubresourceLayout2KHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetImageSubresourceLayout2KHR *args);
-    void (*dispatch_vkGetDeviceImageSubresourceLayoutKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeviceImageSubresourceLayoutKHR *args);
+    void (*dispatch_vkGetImageSubresourceLayout2)(struct vn_dispatch_context *ctx, struct vn_command_vkGetImageSubresourceLayout2 *args);
+    void (*dispatch_vkCmdSetDepthBias2EXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetDepthBias2EXT *args);
+    void (*dispatch_vkGetDeviceImageSubresourceLayout)(struct vn_dispatch_context *ctx, struct vn_command_vkGetDeviceImageSubresourceLayout *args);
+    void (*dispatch_vkMapMemory2)(struct vn_dispatch_context *ctx, struct vn_command_vkMapMemory2 *args);
+    void (*dispatch_vkUnmapMemory2)(struct vn_dispatch_context *ctx, struct vn_command_vkUnmapMemory2 *args);
+    void (*dispatch_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR)(struct vn_dispatch_context *ctx, struct vn_command_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR *args);
+    void (*dispatch_vkCmdBindDescriptorSets2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdBindDescriptorSets2 *args);
+    void (*dispatch_vkCmdPushConstants2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushConstants2 *args);
+    void (*dispatch_vkCmdPushDescriptorSet2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSet2 *args);
+    void (*dispatch_vkCmdPushDescriptorSetWithTemplate2)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdPushDescriptorSetWithTemplate2 *args);
+    void (*dispatch_vkCmdSetRenderingAttachmentLocations)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetRenderingAttachmentLocations *args);
+    void (*dispatch_vkCmdSetRenderingInputAttachmentIndices)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetRenderingInputAttachmentIndices *args);
+    void (*dispatch_vkCmdSetDepthClampRangeEXT)(struct vn_dispatch_context *ctx, struct vn_command_vkCmdSetDepthClampRangeEXT *args);
     void (*dispatch_vkSetReplyCommandStreamMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkSetReplyCommandStreamMESA *args);
     void (*dispatch_vkSeekReplyCommandStreamMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkSeekReplyCommandStreamMESA *args);
     void (*dispatch_vkExecuteCommandStreamsMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkExecuteCommandStreamsMESA *args);
@@ -2756,6 +3299,8 @@ struct vn_dispatch_context {
     void (*dispatch_vkSubmitVirtqueueSeqnoMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkSubmitVirtqueueSeqnoMESA *args);
     void (*dispatch_vkWaitVirtqueueSeqnoMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkWaitVirtqueueSeqnoMESA *args);
     void (*dispatch_vkWaitRingSeqnoMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkWaitRingSeqnoMESA *args);
+    void (*dispatch_vkCopyImageToMemoryMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyImageToMemoryMESA *args);
+    void (*dispatch_vkCopyMemoryToImageMESA)(struct vn_dispatch_context *ctx, struct vn_command_vkCopyMemoryToImageMESA *args);
 };
 
 static inline void vn_dispatch_debug_log(struct vn_dispatch_context *ctx, const char *format, ...)

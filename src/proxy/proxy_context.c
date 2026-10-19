@@ -300,6 +300,7 @@ proxy_context_submit_cmd(struct virgl_context *base, const void *buffer, size_t 
 static bool
 validate_resource_fd_shm(int fd, uint64_t expected_size)
 {
+#if defined(HAVE_MEMFD_CREATE)
    static const int blocked_seals = F_SEAL_WRITE;
 
    const int seals = fcntl(fd, F_GET_SEALS);
@@ -307,6 +308,7 @@ validate_resource_fd_shm(int fd, uint64_t expected_size)
       proxy_log("failed to validate shm seals(%d): blocked(%d)", seals, blocked_seals);
       return false;
    }
+#endif
 
    const uint64_t size = lseek(fd, 0, SEEK_END);
    if (size != expected_size) {
@@ -321,7 +323,13 @@ validate_resource_fd_shm(int fd, uint64_t expected_size)
 static inline int
 add_required_seals_to_fd(int fd)
 {
+#if defined(HAVE_MEMFD_CREATE)
    return fcntl(fd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW);
+#else
+   // if memfd_create is not available pretend file sealing worked
+   (void)fd;
+   return 0;
+#endif
 }
 
 static int
@@ -645,8 +653,10 @@ static bool
 proxy_context_init(struct proxy_context *ctx, uint32_t ctx_flags)
 {
    if (!proxy_context_init_shmem(ctx) || !proxy_context_init_timelines(ctx) ||
-       !proxy_context_init_fencing(ctx) || !proxy_context_resource_table_init(ctx))
+       !proxy_context_init_fencing(ctx) || !proxy_context_resource_table_init(ctx)) {
+      proxy_log("failed to pre-initialize context");
       return false;
+   }
 
    const struct render_context_op_init_request req = {
       .header.op = RENDER_CONTEXT_OP_INIT,

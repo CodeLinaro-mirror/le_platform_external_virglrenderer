@@ -40,6 +40,12 @@
 
 #include "util/detect_os.h"
 
+#if defined(__FreeBSD__)
+#ifndef ETIME
+#define ETIME ETIMEDOUT
+#endif
+#endif
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
@@ -49,33 +55,6 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
-
-#if DETECT_OS_ANDROID
-/* On Android, rely on the system's libsync instead of rolling our own
- * sync_wait() and sync_merge().  This gives us compatibility with pre-4.7
- * Android kernels.
- */
-#include <android/sync.h>
-
-/**
- * Check if the fd represents a valid fence-fd.
- *
- * The android variant of this debug helper is implemented on top of the
- * system's libsync for compatibility with pre-4.7 android kernels.
- */
-static inline bool
-sync_valid_fd(int fd)
-{
-	/* sync_file_info() only available in SDK 26. */
-#if ANDROID_API_LEVEL >= 26
-	struct sync_file_info *info = sync_file_info(fd);
-	if (!info)
-		return false;
-	sync_file_info_free(info);
-#endif
-	return true;
-}
-#else
 
 #ifndef SYNC_IOC_MERGE
 /* duplicated from linux/sync_file.h to avoid build-time dependency
@@ -164,8 +143,6 @@ sync_valid_fd(int fd)
 	struct sync_file_info info = {{0}};
 	return ioctl(fd, SYNC_IOC_FILE_INFO, &info) >= 0;
 }
-
-#endif /* DETECT_OS_ANDROID */
 
 /* accumulate fd2 into fd1.  If *fd1 is not a valid fd then dup fd2,
  * otherwise sync_merge() and close the old *fd1.  This can be used

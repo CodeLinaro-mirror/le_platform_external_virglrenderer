@@ -24,11 +24,10 @@
 #include "drm_util.h"
 
 static int
-drm_context_get_fencing_fd(struct virgl_context *vctx)
+drm_context_get_fencing_fd(UNUSED struct virgl_context *vctx)
 {
-   struct drm_context *dctx = to_drm_context(vctx);
-
-   return dctx->eventfd;
+   /* VIRGL_RENDERER_ASYNC_FENCE_CB is required */
+   return -1;
 }
 
 static void
@@ -223,6 +222,14 @@ drm_context_detach_resource(struct virgl_context *vctx, struct virgl_resource *r
    drm_context_free_object(dctx, obj);
 }
 
+static int
+drm_context_get_device_fd(struct virgl_context *vctx)
+{
+   struct drm_context *dctx = to_drm_context(vctx);
+
+   return dctx->fd;
+}
+
 bool
 drm_context_init(struct drm_context *dctx, int fd,
                  const struct drm_ccmd *ccmd_dispatch, unsigned int dispatch_size)
@@ -239,7 +246,6 @@ drm_context_init(struct drm_context *dctx, int fd,
 
    dctx->ccmd_dispatch = ccmd_dispatch;
    dctx->dispatch_size = dispatch_size;
-   dctx->eventfd = create_eventfd(0);
    dctx->fd = fd;
 
    /* 8 bytes by default */
@@ -250,6 +256,8 @@ drm_context_init(struct drm_context *dctx, int fd,
    dctx->base.get_fencing_fd = drm_context_get_fencing_fd;
    dctx->base.retire_fences = drm_context_retire_fences;
    dctx->base.detach_resource = drm_context_detach_resource;
+   dctx->base.get_device_fd = drm_context_get_device_fd;
+
    return true;
 fail_blob_table:
    _mesa_hash_table_destroy(dctx->resource_table, NULL);
@@ -299,7 +307,6 @@ drm_context_deinit(struct drm_context *dctx)
    _mesa_hash_table_destroy(dctx->resource_table, NULL);
    _mesa_hash_table_destroy(dctx->blob_table, NULL);
 
-   close(dctx->eventfd);
    close(dctx->fd);
 }
 
@@ -366,12 +373,14 @@ drm_context_get_shmem_blob(struct drm_context *dctx,
       return -ENOMEM;
    }
 
+#if defined(HAVE_MEMFD_CREATE)
    int ret = fcntl(fd, F_ADD_SEALS, F_SEAL_SEAL | F_SEAL_SHRINK | F_SEAL_GROW);
    if (ret) {
       drm_err("fcntl failed: %s", strerror(errno));
       close(fd);
       return -ENOMEM;
    }
+#endif
 
    dctx->shmem = mmap(NULL, blob_size, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
    if (dctx->shmem == MAP_FAILED) {

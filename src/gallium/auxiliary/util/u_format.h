@@ -185,6 +185,16 @@ struct util_format_description
    unsigned is_mixed:1;
 
    /**
+    * Whether the format contains UNORM channels
+    */
+   unsigned is_unorm:1;
+
+   /**
+    * Whether the format contains SNORM channels
+    */
+   unsigned is_snorm:1;
+
+   /**
     * Input channel description, in the order XYZW.
     *
     * Only valid for UTIL_FORMAT_LAYOUT_PLAIN formats.
@@ -228,6 +238,16 @@ struct util_format_description
     * Colorspace transformation.
     */
    enum util_format_colorspace colorspace;
+
+   /**
+    * For sRGB formats, equivalent linear format; for linear formats,
+    * equivalent sRGB format
+    */
+   union {
+      enum pipe_format srgb_equivalent;
+      enum pipe_format linear_equivalent;
+   };
+
 };
 
 
@@ -235,7 +255,7 @@ extern const struct util_format_description
 util_format_description_table[];
 
 
-const struct util_format_description *
+ATTRIBUTE_RETURNS_NONNULL const struct util_format_description *
 util_format_description(enum pipe_format format);
 
 
@@ -243,24 +263,26 @@ util_format_description(enum pipe_format format);
  * Format query functions.
  */
 
-static inline const char *
+ATTRIBUTE_RETURNS_NONNULL static inline const char *
 util_format_name(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT || !desc->name)) {
       return "PIPE_FORMAT_???";
    }
 
    return desc->name;
 }
 
-static inline const char *
+ATTRIBUTE_RETURNS_NONNULL static inline const char *
 util_format_short_name(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT || !desc->short_name)) {
       return "???";
    }
 
@@ -275,7 +297,8 @@ util_format_is_plain(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!format) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return false;
    }
 
@@ -287,7 +310,8 @@ util_format_is_compressed(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return false;
    }
 
@@ -310,6 +334,12 @@ static inline bool
 util_format_is_srgb(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
+
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
+      return false;
+   }
+
    return desc->colorspace == UTIL_FORMAT_COLORSPACE_SRGB;
 }
 
@@ -332,7 +362,8 @@ util_format_is_depth_or_stencil(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return false;
    }
 
@@ -345,7 +376,8 @@ util_format_is_depth_and_stencil(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return false;
    }
 
@@ -390,8 +422,10 @@ util_format_get_mask(enum pipe_format format)
    const struct util_format_description *desc =
       util_format_description(format);
 
-   if (!desc)
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return 0;
+   }
 
    if (util_format_has_depth(desc)) {
       if (util_format_has_stencil(desc)) {
@@ -486,7 +520,8 @@ util_format_get_blocksizebits(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return 0;
    }
 
@@ -516,7 +551,8 @@ util_format_get_blockwidth(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return 1;
    }
 
@@ -528,7 +564,8 @@ util_format_get_blockheight(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return 1;
    }
 
@@ -540,8 +577,8 @@ util_format_get_blockdepth(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
 
-   assert(desc);
-   if (!desc) {
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return 1;
    }
 
@@ -649,44 +686,12 @@ util_format_srgb(enum pipe_format format)
    if (util_format_is_srgb(format))
       return format;
 
-   switch (format) {
-   case PIPE_FORMAT_L8_UNORM:
-      return PIPE_FORMAT_L8_SRGB;
-   case PIPE_FORMAT_L8A8_UNORM:
-      return PIPE_FORMAT_L8A8_SRGB;
-   case PIPE_FORMAT_R8G8B8_UNORM:
-      return PIPE_FORMAT_R8G8B8_SRGB;
-   case PIPE_FORMAT_A8B8G8R8_UNORM:
-      return PIPE_FORMAT_A8B8G8R8_SRGB;
-   case PIPE_FORMAT_X8B8G8R8_UNORM:
-      return PIPE_FORMAT_X8B8G8R8_SRGB;
-   case PIPE_FORMAT_B8G8R8A8_UNORM:
-      return PIPE_FORMAT_B8G8R8A8_SRGB;
-   case PIPE_FORMAT_B8G8R8X8_UNORM:
-      return PIPE_FORMAT_B8G8R8X8_SRGB;
-   case PIPE_FORMAT_A8R8G8B8_UNORM:
-      return PIPE_FORMAT_A8R8G8B8_SRGB;
-   case PIPE_FORMAT_X8R8G8B8_UNORM:
-      return PIPE_FORMAT_X8R8G8B8_SRGB;
-   case PIPE_FORMAT_R8G8B8A8_UNORM:
-      return PIPE_FORMAT_R8G8B8A8_SRGB;
-   case PIPE_FORMAT_R8G8B8X8_UNORM:
-      return PIPE_FORMAT_R8G8B8X8_SRGB;
-   case PIPE_FORMAT_DXT1_RGB:
-      return PIPE_FORMAT_DXT1_SRGB;
-   case PIPE_FORMAT_DXT1_RGBA:
-      return PIPE_FORMAT_DXT1_SRGBA;
-   case PIPE_FORMAT_DXT3_RGBA:
-      return PIPE_FORMAT_DXT3_SRGBA;
-   case PIPE_FORMAT_DXT5_RGBA:
-      return PIPE_FORMAT_DXT5_SRGBA;
-   case PIPE_FORMAT_B5G6R5_UNORM:
-      return PIPE_FORMAT_B5G6R5_SRGB;
-   case PIPE_FORMAT_BPTC_RGBA_UNORM:
-      return PIPE_FORMAT_BPTC_SRGBA;
-   default:
-      return PIPE_FORMAT_NONE;
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
+      return format;
    }
+
+   return util_format_description(format)->srgb_equivalent;
 }
 
 /**
@@ -696,44 +701,15 @@ util_format_srgb(enum pipe_format format)
 static inline enum pipe_format
 util_format_linear(enum pipe_format format)
 {
-   switch (format) {
-   case PIPE_FORMAT_L8_SRGB:
-      return PIPE_FORMAT_L8_UNORM;
-   case PIPE_FORMAT_L8A8_SRGB:
-      return PIPE_FORMAT_L8A8_UNORM;
-   case PIPE_FORMAT_R8G8B8_SRGB:
-      return PIPE_FORMAT_R8G8B8_UNORM;
-   case PIPE_FORMAT_A8B8G8R8_SRGB:
-      return PIPE_FORMAT_A8B8G8R8_UNORM;
-   case PIPE_FORMAT_X8B8G8R8_SRGB:
-      return PIPE_FORMAT_X8B8G8R8_UNORM;
-   case PIPE_FORMAT_B8G8R8A8_SRGB:
-      return PIPE_FORMAT_B8G8R8A8_UNORM;
-   case PIPE_FORMAT_B8G8R8X8_SRGB:
-      return PIPE_FORMAT_B8G8R8X8_UNORM;
-   case PIPE_FORMAT_A8R8G8B8_SRGB:
-      return PIPE_FORMAT_A8R8G8B8_UNORM;
-   case PIPE_FORMAT_X8R8G8B8_SRGB:
-      return PIPE_FORMAT_X8R8G8B8_UNORM;
-   case PIPE_FORMAT_R8G8B8A8_SRGB:
-      return PIPE_FORMAT_R8G8B8A8_UNORM;
-   case PIPE_FORMAT_R8G8B8X8_SRGB:
-      return PIPE_FORMAT_R8G8B8X8_UNORM;
-   case PIPE_FORMAT_DXT1_SRGB:
-      return PIPE_FORMAT_DXT1_RGB;
-   case PIPE_FORMAT_DXT1_SRGBA:
-      return PIPE_FORMAT_DXT1_RGBA;
-   case PIPE_FORMAT_DXT3_SRGBA:
-      return PIPE_FORMAT_DXT3_RGBA;
-   case PIPE_FORMAT_DXT5_SRGBA:
-      return PIPE_FORMAT_DXT5_RGBA;
-   case PIPE_FORMAT_B5G6R5_SRGB:
-      return PIPE_FORMAT_B5G6R5_UNORM;
-   case PIPE_FORMAT_BPTC_SRGBA:
-      return PIPE_FORMAT_BPTC_RGBA_UNORM;
-   default:
+   if (!util_format_is_srgb(format))
+      return format;
+
+   assert(format < PIPE_FORMAT_COUNT);
+   if (unlikely(format >= PIPE_FORMAT_COUNT)) {
       return format;
    }
+
+   return util_format_description(format)->linear_equivalent;
 }
 
 /**
@@ -888,6 +864,8 @@ static inline unsigned
 util_format_get_nr_components(enum pipe_format format)
 {
    const struct util_format_description *desc = util_format_description(format);
+   assert(desc->nr_channels <= 4);
+
    return desc->nr_channels;
 }
 

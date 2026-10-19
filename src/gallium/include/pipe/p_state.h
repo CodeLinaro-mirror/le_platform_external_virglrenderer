@@ -328,6 +328,7 @@ struct pipe_sampler_state
    unsigned compare_func:3;      /**< PIPE_FUNC_x */
    unsigned max_anisotropy:5;
    unsigned seamless_cube_map:1;
+   unsigned pad:9;               /**< take bits from this for new members */
    float lod_bias;               /**< LOD/lambda bias */
    float min_lod, max_lod;       /**< LOD clamp range, after bias */
    union pipe_color_union border_color;
@@ -344,10 +345,6 @@ struct pipe_surface
    struct pipe_resource *texture; /**< resource into which this is a view  */
    struct pipe_context *context; /**< context this surface belongs to */
    enum pipe_format format;
-
-   /* XXX width/height should be removed */
-   unsigned width;               /**< logical width in pixels */
-   unsigned height;              /**< logical height in pixels */
 
    unsigned writable:1;          /**< writable shader resource */
 

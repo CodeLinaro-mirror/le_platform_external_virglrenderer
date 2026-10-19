@@ -11,9 +11,45 @@
 
 #include "vn_protocol_renderer_info.h"
 
+struct vn_global_proc_table {
+   PFN_vkCreateInstance CreateInstance;
+   PFN_vkEnumerateInstanceExtensionProperties EnumerateInstanceExtensionProperties;
+   PFN_vkEnumerateInstanceLayerProperties EnumerateInstanceLayerProperties;
+   PFN_vkEnumerateInstanceVersion EnumerateInstanceVersion;
+};
+
+struct vn_instance_proc_table {
+   PFN_vkDestroyInstance DestroyInstance;
+   PFN_vkEnumeratePhysicalDeviceGroups EnumeratePhysicalDeviceGroups;
+   PFN_vkEnumeratePhysicalDevices EnumeratePhysicalDevices;
+};
+
 struct vn_physical_device_proc_table {
-   PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT GetPhysicalDeviceCalibrateableTimeDomainsEXT;
+   PFN_vkCreateDevice CreateDevice;
+   PFN_vkEnumerateDeviceExtensionProperties EnumerateDeviceExtensionProperties;
+   PFN_vkEnumerateDeviceLayerProperties EnumerateDeviceLayerProperties;
+   PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
+   PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsKHR GetPhysicalDeviceCalibrateableTimeDomainsKHR;
+   PFN_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR GetPhysicalDeviceCooperativeMatrixPropertiesKHR;
+   PFN_vkGetPhysicalDeviceExternalBufferProperties GetPhysicalDeviceExternalBufferProperties;
+   PFN_vkGetPhysicalDeviceExternalFenceProperties GetPhysicalDeviceExternalFenceProperties;
+   PFN_vkGetPhysicalDeviceExternalSemaphoreProperties GetPhysicalDeviceExternalSemaphoreProperties;
+   PFN_vkGetPhysicalDeviceFeatures GetPhysicalDeviceFeatures;
+   PFN_vkGetPhysicalDeviceFeatures2 GetPhysicalDeviceFeatures2;
+   PFN_vkGetPhysicalDeviceFormatProperties GetPhysicalDeviceFormatProperties;
+   PFN_vkGetPhysicalDeviceFormatProperties2 GetPhysicalDeviceFormatProperties2;
    PFN_vkGetPhysicalDeviceFragmentShadingRatesKHR GetPhysicalDeviceFragmentShadingRatesKHR;
+   PFN_vkGetPhysicalDeviceImageFormatProperties GetPhysicalDeviceImageFormatProperties;
+   PFN_vkGetPhysicalDeviceImageFormatProperties2 GetPhysicalDeviceImageFormatProperties2;
+   PFN_vkGetPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties;
+   PFN_vkGetPhysicalDeviceMemoryProperties2 GetPhysicalDeviceMemoryProperties2;
+   PFN_vkGetPhysicalDeviceMultisamplePropertiesEXT GetPhysicalDeviceMultisamplePropertiesEXT;
+   PFN_vkGetPhysicalDeviceProperties GetPhysicalDeviceProperties;
+   PFN_vkGetPhysicalDeviceProperties2 GetPhysicalDeviceProperties2;
+   PFN_vkGetPhysicalDeviceQueueFamilyProperties GetPhysicalDeviceQueueFamilyProperties;
+   PFN_vkGetPhysicalDeviceQueueFamilyProperties2 GetPhysicalDeviceQueueFamilyProperties2;
+   PFN_vkGetPhysicalDeviceSparseImageFormatProperties GetPhysicalDeviceSparseImageFormatProperties;
+   PFN_vkGetPhysicalDeviceSparseImageFormatProperties2 GetPhysicalDeviceSparseImageFormatProperties2;
    PFN_vkGetPhysicalDeviceToolProperties GetPhysicalDeviceToolProperties;
 };
 
@@ -26,6 +62,7 @@ struct vn_device_proc_table {
    PFN_vkBindBufferMemory2 BindBufferMemory2;
    PFN_vkBindImageMemory BindImageMemory;
    PFN_vkBindImageMemory2 BindImageMemory2;
+   PFN_vkBuildAccelerationStructuresKHR BuildAccelerationStructuresKHR;
    PFN_vkCmdBeginConditionalRenderingEXT CmdBeginConditionalRenderingEXT;
    PFN_vkCmdBeginQuery CmdBeginQuery;
    PFN_vkCmdBeginQueryIndexedEXT CmdBeginQueryIndexedEXT;
@@ -34,17 +71,22 @@ struct vn_device_proc_table {
    PFN_vkCmdBeginRendering CmdBeginRendering;
    PFN_vkCmdBeginTransformFeedbackEXT CmdBeginTransformFeedbackEXT;
    PFN_vkCmdBindDescriptorSets CmdBindDescriptorSets;
+   PFN_vkCmdBindDescriptorSets2 CmdBindDescriptorSets2;
    PFN_vkCmdBindIndexBuffer CmdBindIndexBuffer;
-   PFN_vkCmdBindIndexBuffer2KHR CmdBindIndexBuffer2KHR;
+   PFN_vkCmdBindIndexBuffer2 CmdBindIndexBuffer2;
    PFN_vkCmdBindPipeline CmdBindPipeline;
    PFN_vkCmdBindTransformFeedbackBuffersEXT CmdBindTransformFeedbackBuffersEXT;
    PFN_vkCmdBindVertexBuffers CmdBindVertexBuffers;
    PFN_vkCmdBindVertexBuffers2 CmdBindVertexBuffers2;
    PFN_vkCmdBlitImage CmdBlitImage;
    PFN_vkCmdBlitImage2 CmdBlitImage2;
+   PFN_vkCmdBuildAccelerationStructuresIndirectKHR CmdBuildAccelerationStructuresIndirectKHR;
+   PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
    PFN_vkCmdClearAttachments CmdClearAttachments;
    PFN_vkCmdClearColorImage CmdClearColorImage;
    PFN_vkCmdClearDepthStencilImage CmdClearDepthStencilImage;
+   PFN_vkCmdCopyAccelerationStructureKHR CmdCopyAccelerationStructureKHR;
+   PFN_vkCmdCopyAccelerationStructureToMemoryKHR CmdCopyAccelerationStructureToMemoryKHR;
    PFN_vkCmdCopyBuffer CmdCopyBuffer;
    PFN_vkCmdCopyBuffer2 CmdCopyBuffer2;
    PFN_vkCmdCopyBufferToImage CmdCopyBufferToImage;
@@ -53,6 +95,7 @@ struct vn_device_proc_table {
    PFN_vkCmdCopyImage2 CmdCopyImage2;
    PFN_vkCmdCopyImageToBuffer CmdCopyImageToBuffer;
    PFN_vkCmdCopyImageToBuffer2 CmdCopyImageToBuffer2;
+   PFN_vkCmdCopyMemoryToAccelerationStructureKHR CmdCopyMemoryToAccelerationStructureKHR;
    PFN_vkCmdCopyQueryPoolResults CmdCopyQueryPoolResults;
    PFN_vkCmdDispatch CmdDispatch;
    PFN_vkCmdDispatchBase CmdDispatchBase;
@@ -64,6 +107,9 @@ struct vn_device_proc_table {
    PFN_vkCmdDrawIndirect CmdDrawIndirect;
    PFN_vkCmdDrawIndirectByteCountEXT CmdDrawIndirectByteCountEXT;
    PFN_vkCmdDrawIndirectCount CmdDrawIndirectCount;
+   PFN_vkCmdDrawMeshTasksEXT CmdDrawMeshTasksEXT;
+   PFN_vkCmdDrawMeshTasksIndirectCountEXT CmdDrawMeshTasksIndirectCountEXT;
+   PFN_vkCmdDrawMeshTasksIndirectEXT CmdDrawMeshTasksIndirectEXT;
    PFN_vkCmdDrawMultiEXT CmdDrawMultiEXT;
    PFN_vkCmdDrawMultiIndexedEXT CmdDrawMultiIndexedEXT;
    PFN_vkCmdEndConditionalRenderingEXT CmdEndConditionalRenderingEXT;
@@ -80,8 +126,11 @@ struct vn_device_proc_table {
    PFN_vkCmdPipelineBarrier CmdPipelineBarrier;
    PFN_vkCmdPipelineBarrier2 CmdPipelineBarrier2;
    PFN_vkCmdPushConstants CmdPushConstants;
-   PFN_vkCmdPushDescriptorSetKHR CmdPushDescriptorSetKHR;
-   PFN_vkCmdPushDescriptorSetWithTemplateKHR CmdPushDescriptorSetWithTemplateKHR;
+   PFN_vkCmdPushConstants2 CmdPushConstants2;
+   PFN_vkCmdPushDescriptorSet CmdPushDescriptorSet;
+   PFN_vkCmdPushDescriptorSet2 CmdPushDescriptorSet2;
+   PFN_vkCmdPushDescriptorSetWithTemplate CmdPushDescriptorSetWithTemplate;
+   PFN_vkCmdPushDescriptorSetWithTemplate2 CmdPushDescriptorSetWithTemplate2;
    PFN_vkCmdResetEvent CmdResetEvent;
    PFN_vkCmdResetEvent2 CmdResetEvent2;
    PFN_vkCmdResetQueryPool CmdResetQueryPool;
@@ -89,6 +138,7 @@ struct vn_device_proc_table {
    PFN_vkCmdResolveImage2 CmdResolveImage2;
    PFN_vkCmdSetAlphaToCoverageEnableEXT CmdSetAlphaToCoverageEnableEXT;
    PFN_vkCmdSetAlphaToOneEnableEXT CmdSetAlphaToOneEnableEXT;
+   PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
    PFN_vkCmdSetBlendConstants CmdSetBlendConstants;
    PFN_vkCmdSetColorBlendAdvancedEXT CmdSetColorBlendAdvancedEXT;
    PFN_vkCmdSetColorBlendEnableEXT CmdSetColorBlendEnableEXT;
@@ -98,10 +148,12 @@ struct vn_device_proc_table {
    PFN_vkCmdSetConservativeRasterizationModeEXT CmdSetConservativeRasterizationModeEXT;
    PFN_vkCmdSetCullMode CmdSetCullMode;
    PFN_vkCmdSetDepthBias CmdSetDepthBias;
+   PFN_vkCmdSetDepthBias2EXT CmdSetDepthBias2EXT;
    PFN_vkCmdSetDepthBiasEnable CmdSetDepthBiasEnable;
    PFN_vkCmdSetDepthBounds CmdSetDepthBounds;
    PFN_vkCmdSetDepthBoundsTestEnable CmdSetDepthBoundsTestEnable;
    PFN_vkCmdSetDepthClampEnableEXT CmdSetDepthClampEnableEXT;
+   PFN_vkCmdSetDepthClampRangeEXT CmdSetDepthClampRangeEXT;
    PFN_vkCmdSetDepthClipEnableEXT CmdSetDepthClipEnableEXT;
    PFN_vkCmdSetDepthClipNegativeOneToOneEXT CmdSetDepthClipNegativeOneToOneEXT;
    PFN_vkCmdSetDepthCompareOp CmdSetDepthCompareOp;
@@ -114,7 +166,7 @@ struct vn_device_proc_table {
    PFN_vkCmdSetFragmentShadingRateKHR CmdSetFragmentShadingRateKHR;
    PFN_vkCmdSetFrontFace CmdSetFrontFace;
    PFN_vkCmdSetLineRasterizationModeEXT CmdSetLineRasterizationModeEXT;
-   PFN_vkCmdSetLineStippleEXT CmdSetLineStippleEXT;
+   PFN_vkCmdSetLineStipple CmdSetLineStipple;
    PFN_vkCmdSetLineStippleEnableEXT CmdSetLineStippleEnableEXT;
    PFN_vkCmdSetLineWidth CmdSetLineWidth;
    PFN_vkCmdSetLogicOpEXT CmdSetLogicOpEXT;
@@ -127,6 +179,10 @@ struct vn_device_proc_table {
    PFN_vkCmdSetRasterizationSamplesEXT CmdSetRasterizationSamplesEXT;
    PFN_vkCmdSetRasterizationStreamEXT CmdSetRasterizationStreamEXT;
    PFN_vkCmdSetRasterizerDiscardEnable CmdSetRasterizerDiscardEnable;
+   PFN_vkCmdSetRayTracingPipelineStackSizeKHR CmdSetRayTracingPipelineStackSizeKHR;
+   PFN_vkCmdSetRenderingAttachmentLocations CmdSetRenderingAttachmentLocations;
+   PFN_vkCmdSetRenderingInputAttachmentIndices CmdSetRenderingInputAttachmentIndices;
+   PFN_vkCmdSetSampleLocationsEXT CmdSetSampleLocationsEXT;
    PFN_vkCmdSetSampleLocationsEnableEXT CmdSetSampleLocationsEnableEXT;
    PFN_vkCmdSetSampleMaskEXT CmdSetSampleMaskEXT;
    PFN_vkCmdSetScissor CmdSetScissor;
@@ -140,15 +196,27 @@ struct vn_device_proc_table {
    PFN_vkCmdSetVertexInputEXT CmdSetVertexInputEXT;
    PFN_vkCmdSetViewport CmdSetViewport;
    PFN_vkCmdSetViewportWithCount CmdSetViewportWithCount;
+   PFN_vkCmdTraceRaysIndirect2KHR CmdTraceRaysIndirect2KHR;
+   PFN_vkCmdTraceRaysIndirectKHR CmdTraceRaysIndirectKHR;
+   PFN_vkCmdTraceRaysKHR CmdTraceRaysKHR;
    PFN_vkCmdUpdateBuffer CmdUpdateBuffer;
    PFN_vkCmdWaitEvents CmdWaitEvents;
    PFN_vkCmdWaitEvents2 CmdWaitEvents2;
+   PFN_vkCmdWriteAccelerationStructuresPropertiesKHR CmdWriteAccelerationStructuresPropertiesKHR;
    PFN_vkCmdWriteTimestamp CmdWriteTimestamp;
    PFN_vkCmdWriteTimestamp2 CmdWriteTimestamp2;
+   PFN_vkCopyAccelerationStructureKHR CopyAccelerationStructureKHR;
+   PFN_vkCopyAccelerationStructureToMemoryKHR CopyAccelerationStructureToMemoryKHR;
+   PFN_vkCopyImageToImage CopyImageToImage;
+   PFN_vkCopyImageToMemory CopyImageToMemory;
+   PFN_vkCopyMemoryToAccelerationStructureKHR CopyMemoryToAccelerationStructureKHR;
+   PFN_vkCopyMemoryToImage CopyMemoryToImage;
+   PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
    PFN_vkCreateBuffer CreateBuffer;
    PFN_vkCreateBufferView CreateBufferView;
    PFN_vkCreateCommandPool CreateCommandPool;
    PFN_vkCreateComputePipelines CreateComputePipelines;
+   PFN_vkCreateDeferredOperationKHR CreateDeferredOperationKHR;
    PFN_vkCreateDescriptorPool CreateDescriptorPool;
    PFN_vkCreateDescriptorSetLayout CreateDescriptorSetLayout;
    PFN_vkCreateDescriptorUpdateTemplate CreateDescriptorUpdateTemplate;
@@ -162,15 +230,19 @@ struct vn_device_proc_table {
    PFN_vkCreatePipelineLayout CreatePipelineLayout;
    PFN_vkCreatePrivateDataSlot CreatePrivateDataSlot;
    PFN_vkCreateQueryPool CreateQueryPool;
+   PFN_vkCreateRayTracingPipelinesKHR CreateRayTracingPipelinesKHR;
    PFN_vkCreateRenderPass CreateRenderPass;
    PFN_vkCreateRenderPass2 CreateRenderPass2;
    PFN_vkCreateSampler CreateSampler;
    PFN_vkCreateSamplerYcbcrConversion CreateSamplerYcbcrConversion;
    PFN_vkCreateSemaphore CreateSemaphore;
    PFN_vkCreateShaderModule CreateShaderModule;
+   PFN_vkDeferredOperationJoinKHR DeferredOperationJoinKHR;
+   PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
    PFN_vkDestroyBuffer DestroyBuffer;
    PFN_vkDestroyBufferView DestroyBufferView;
    PFN_vkDestroyCommandPool DestroyCommandPool;
+   PFN_vkDestroyDeferredOperationKHR DestroyDeferredOperationKHR;
    PFN_vkDestroyDescriptorPool DestroyDescriptorPool;
    PFN_vkDestroyDescriptorSetLayout DestroyDescriptorSetLayout;
    PFN_vkDestroyDescriptorUpdateTemplate DestroyDescriptorUpdateTemplate;
@@ -196,20 +268,24 @@ struct vn_device_proc_table {
    PFN_vkFreeCommandBuffers FreeCommandBuffers;
    PFN_vkFreeDescriptorSets FreeDescriptorSets;
    PFN_vkFreeMemory FreeMemory;
+   PFN_vkGetAccelerationStructureBuildSizesKHR GetAccelerationStructureBuildSizesKHR;
+   PFN_vkGetAccelerationStructureDeviceAddressKHR GetAccelerationStructureDeviceAddressKHR;
    PFN_vkGetBufferDeviceAddress GetBufferDeviceAddress;
    PFN_vkGetBufferMemoryRequirements GetBufferMemoryRequirements;
    PFN_vkGetBufferMemoryRequirements2 GetBufferMemoryRequirements2;
    PFN_vkGetBufferOpaqueCaptureAddress GetBufferOpaqueCaptureAddress;
-   PFN_vkGetCalibratedTimestampsEXT GetCalibratedTimestampsEXT;
+   PFN_vkGetCalibratedTimestampsKHR GetCalibratedTimestampsKHR;
+   PFN_vkGetDeferredOperationMaxConcurrencyKHR GetDeferredOperationMaxConcurrencyKHR;
+   PFN_vkGetDeferredOperationResultKHR GetDeferredOperationResultKHR;
    PFN_vkGetDescriptorSetLayoutSupport GetDescriptorSetLayoutSupport;
+   PFN_vkGetDeviceAccelerationStructureCompatibilityKHR GetDeviceAccelerationStructureCompatibilityKHR;
    PFN_vkGetDeviceBufferMemoryRequirements GetDeviceBufferMemoryRequirements;
    PFN_vkGetDeviceGroupPeerMemoryFeatures GetDeviceGroupPeerMemoryFeatures;
    PFN_vkGetDeviceImageMemoryRequirements GetDeviceImageMemoryRequirements;
    PFN_vkGetDeviceImageSparseMemoryRequirements GetDeviceImageSparseMemoryRequirements;
-   PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
+   PFN_vkGetDeviceImageSubresourceLayout GetDeviceImageSubresourceLayout;
    PFN_vkGetDeviceMemoryCommitment GetDeviceMemoryCommitment;
    PFN_vkGetDeviceMemoryOpaqueCaptureAddress GetDeviceMemoryOpaqueCaptureAddress;
-   PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
    PFN_vkGetDeviceQueue GetDeviceQueue;
    PFN_vkGetDeviceQueue2 GetDeviceQueue2;
    PFN_vkGetEventStatus GetEventStatus;
@@ -221,20 +297,24 @@ struct vn_device_proc_table {
    PFN_vkGetImageSparseMemoryRequirements GetImageSparseMemoryRequirements;
    PFN_vkGetImageSparseMemoryRequirements2 GetImageSparseMemoryRequirements2;
    PFN_vkGetImageSubresourceLayout GetImageSubresourceLayout;
-   PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+   PFN_vkGetImageSubresourceLayout2 GetImageSubresourceLayout2;
    PFN_vkGetMemoryFdKHR GetMemoryFdKHR;
    PFN_vkGetMemoryFdPropertiesKHR GetMemoryFdPropertiesKHR;
    PFN_vkGetPipelineCacheData GetPipelineCacheData;
    PFN_vkGetPrivateData GetPrivateData;
    PFN_vkGetQueryPoolResults GetQueryPoolResults;
+   PFN_vkGetRayTracingCaptureReplayShaderGroupHandlesKHR GetRayTracingCaptureReplayShaderGroupHandlesKHR;
+   PFN_vkGetRayTracingShaderGroupHandlesKHR GetRayTracingShaderGroupHandlesKHR;
+   PFN_vkGetRayTracingShaderGroupStackSizeKHR GetRayTracingShaderGroupStackSizeKHR;
    PFN_vkGetRenderAreaGranularity GetRenderAreaGranularity;
-   PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
+   PFN_vkGetRenderingAreaGranularity GetRenderingAreaGranularity;
    PFN_vkGetSemaphoreCounterValue GetSemaphoreCounterValue;
    PFN_vkGetSemaphoreFdKHR GetSemaphoreFdKHR;
    PFN_vkImportFenceFdKHR ImportFenceFdKHR;
    PFN_vkImportSemaphoreFdKHR ImportSemaphoreFdKHR;
    PFN_vkInvalidateMappedMemoryRanges InvalidateMappedMemoryRanges;
    PFN_vkMapMemory MapMemory;
+   PFN_vkMapMemory2 MapMemory2;
    PFN_vkMergePipelineCaches MergePipelineCaches;
    PFN_vkQueueBindSparse QueueBindSparse;
    PFN_vkQueueSubmit QueueSubmit;
@@ -249,21 +329,96 @@ struct vn_device_proc_table {
    PFN_vkSetEvent SetEvent;
    PFN_vkSetPrivateData SetPrivateData;
    PFN_vkSignalSemaphore SignalSemaphore;
+   PFN_vkTransitionImageLayout TransitionImageLayout;
    PFN_vkTrimCommandPool TrimCommandPool;
    PFN_vkUnmapMemory UnmapMemory;
+   PFN_vkUnmapMemory2 UnmapMemory2;
    PFN_vkUpdateDescriptorSetWithTemplate UpdateDescriptorSetWithTemplate;
    PFN_vkUpdateDescriptorSets UpdateDescriptorSets;
    PFN_vkWaitForFences WaitForFences;
    PFN_vkWaitSemaphores WaitSemaphores;
+   PFN_vkWriteAccelerationStructuresPropertiesKHR WriteAccelerationStructuresPropertiesKHR;
 };
 
 static inline void
+vn_util_init_global_proc_table(PFN_vkGetInstanceProcAddr get_proc_addr,
+                               struct vn_global_proc_table *proc_table)
+{
+#define VN_GIPA(cmd) (PFN_ ## cmd)get_proc_addr(VK_NULL_HANDLE, #cmd)
+   proc_table->CreateInstance = VN_GIPA(vkCreateInstance);
+   proc_table->EnumerateInstanceExtensionProperties = VN_GIPA(vkEnumerateInstanceExtensionProperties);
+   proc_table->EnumerateInstanceLayerProperties = VN_GIPA(vkEnumerateInstanceLayerProperties);
+   proc_table->EnumerateInstanceVersion = VN_GIPA(vkEnumerateInstanceVersion);
+#undef VN_GIPA
+}
+
+static inline void
+vn_util_init_instance_proc_table(VkInstance instance,
+                                 PFN_vkGetInstanceProcAddr get_proc_addr,
+                                 struct vn_instance_proc_table *proc_table)
+{
+#define VN_GIPA(instance, cmd) (PFN_ ## cmd)get_proc_addr(instance, #cmd)
+   proc_table->DestroyInstance = VN_GIPA(instance, vkDestroyInstance);
+   proc_table->EnumeratePhysicalDeviceGroups = VN_GIPA(instance, vkEnumeratePhysicalDeviceGroups);
+   if (!proc_table->EnumeratePhysicalDeviceGroups)
+      proc_table->EnumeratePhysicalDeviceGroups = VN_GIPA(instance, vkEnumeratePhysicalDeviceGroupsKHR);
+   proc_table->EnumeratePhysicalDevices = VN_GIPA(instance, vkEnumeratePhysicalDevices);
+#undef VN_GIPA
+}
+
+static inline void
 vn_util_init_physical_device_proc_table(VkInstance instance,
+                                        PFN_vkGetInstanceProcAddr get_proc_addr,
                                         struct vn_physical_device_proc_table *proc_table)
 {
-#define VN_GIPA(instance, cmd) (PFN_ ## cmd)vkGetInstanceProcAddr(instance, #cmd)
-   proc_table->GetPhysicalDeviceCalibrateableTimeDomainsEXT = VN_GIPA(instance, vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
+#define VN_GIPA(instance, cmd) (PFN_ ## cmd)get_proc_addr(instance, #cmd)
+   proc_table->CreateDevice = VN_GIPA(instance, vkCreateDevice);
+   proc_table->EnumerateDeviceExtensionProperties = VN_GIPA(instance, vkEnumerateDeviceExtensionProperties);
+   proc_table->EnumerateDeviceLayerProperties = VN_GIPA(instance, vkEnumerateDeviceLayerProperties);
+   proc_table->GetDeviceProcAddr = VN_GIPA(instance, vkGetDeviceProcAddr);
+   proc_table->GetPhysicalDeviceCalibrateableTimeDomainsKHR = VN_GIPA(instance, vkGetPhysicalDeviceCalibrateableTimeDomainsKHR);
+   if (!proc_table->GetPhysicalDeviceCalibrateableTimeDomainsKHR)
+      proc_table->GetPhysicalDeviceCalibrateableTimeDomainsKHR = VN_GIPA(instance, vkGetPhysicalDeviceCalibrateableTimeDomainsEXT);
+   proc_table->GetPhysicalDeviceCooperativeMatrixPropertiesKHR = VN_GIPA(instance, vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR);
+   proc_table->GetPhysicalDeviceExternalBufferProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalBufferProperties);
+   if (!proc_table->GetPhysicalDeviceExternalBufferProperties)
+      proc_table->GetPhysicalDeviceExternalBufferProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalBufferPropertiesKHR);
+   proc_table->GetPhysicalDeviceExternalFenceProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalFenceProperties);
+   if (!proc_table->GetPhysicalDeviceExternalFenceProperties)
+      proc_table->GetPhysicalDeviceExternalFenceProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalFencePropertiesKHR);
+   proc_table->GetPhysicalDeviceExternalSemaphoreProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalSemaphoreProperties);
+   if (!proc_table->GetPhysicalDeviceExternalSemaphoreProperties)
+      proc_table->GetPhysicalDeviceExternalSemaphoreProperties = VN_GIPA(instance, vkGetPhysicalDeviceExternalSemaphorePropertiesKHR);
+   proc_table->GetPhysicalDeviceFeatures = VN_GIPA(instance, vkGetPhysicalDeviceFeatures);
+   proc_table->GetPhysicalDeviceFeatures2 = VN_GIPA(instance, vkGetPhysicalDeviceFeatures2);
+   if (!proc_table->GetPhysicalDeviceFeatures2)
+      proc_table->GetPhysicalDeviceFeatures2 = VN_GIPA(instance, vkGetPhysicalDeviceFeatures2KHR);
+   proc_table->GetPhysicalDeviceFormatProperties = VN_GIPA(instance, vkGetPhysicalDeviceFormatProperties);
+   proc_table->GetPhysicalDeviceFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceFormatProperties2);
+   if (!proc_table->GetPhysicalDeviceFormatProperties2)
+      proc_table->GetPhysicalDeviceFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceFormatProperties2KHR);
    proc_table->GetPhysicalDeviceFragmentShadingRatesKHR = VN_GIPA(instance, vkGetPhysicalDeviceFragmentShadingRatesKHR);
+   proc_table->GetPhysicalDeviceImageFormatProperties = VN_GIPA(instance, vkGetPhysicalDeviceImageFormatProperties);
+   proc_table->GetPhysicalDeviceImageFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceImageFormatProperties2);
+   if (!proc_table->GetPhysicalDeviceImageFormatProperties2)
+      proc_table->GetPhysicalDeviceImageFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceImageFormatProperties2KHR);
+   proc_table->GetPhysicalDeviceMemoryProperties = VN_GIPA(instance, vkGetPhysicalDeviceMemoryProperties);
+   proc_table->GetPhysicalDeviceMemoryProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceMemoryProperties2);
+   if (!proc_table->GetPhysicalDeviceMemoryProperties2)
+      proc_table->GetPhysicalDeviceMemoryProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceMemoryProperties2KHR);
+   proc_table->GetPhysicalDeviceMultisamplePropertiesEXT = VN_GIPA(instance, vkGetPhysicalDeviceMultisamplePropertiesEXT);
+   proc_table->GetPhysicalDeviceProperties = VN_GIPA(instance, vkGetPhysicalDeviceProperties);
+   proc_table->GetPhysicalDeviceProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceProperties2);
+   if (!proc_table->GetPhysicalDeviceProperties2)
+      proc_table->GetPhysicalDeviceProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceProperties2KHR);
+   proc_table->GetPhysicalDeviceQueueFamilyProperties = VN_GIPA(instance, vkGetPhysicalDeviceQueueFamilyProperties);
+   proc_table->GetPhysicalDeviceQueueFamilyProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceQueueFamilyProperties2);
+   if (!proc_table->GetPhysicalDeviceQueueFamilyProperties2)
+      proc_table->GetPhysicalDeviceQueueFamilyProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceQueueFamilyProperties2KHR);
+   proc_table->GetPhysicalDeviceSparseImageFormatProperties = VN_GIPA(instance, vkGetPhysicalDeviceSparseImageFormatProperties);
+   proc_table->GetPhysicalDeviceSparseImageFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceSparseImageFormatProperties2);
+   if (!proc_table->GetPhysicalDeviceSparseImageFormatProperties2)
+      proc_table->GetPhysicalDeviceSparseImageFormatProperties2 = VN_GIPA(instance, vkGetPhysicalDeviceSparseImageFormatProperties2KHR);
    proc_table->GetPhysicalDeviceToolProperties = VN_GIPA(instance, vkGetPhysicalDeviceToolProperties);
    if (!proc_table->GetPhysicalDeviceToolProperties)
       proc_table->GetPhysicalDeviceToolProperties = VN_GIPA(instance, vkGetPhysicalDeviceToolPropertiesEXT);
@@ -273,11 +428,12 @@ vn_util_init_physical_device_proc_table(VkInstance instance,
 
 static inline void
 vn_util_init_device_proc_table(VkDevice dev,
+                               PFN_vkGetDeviceProcAddr get_proc_addr,
                                uint32_t api_version,
                                const struct vn_info_extension_table *ext_table,
                                struct vn_device_proc_table *proc_table)
 {
-#define VN_GDPA(dev, cmd) (PFN_ ## cmd)vkGetDeviceProcAddr(dev, #cmd)
+#define VN_GDPA(dev, cmd) (PFN_ ## cmd)get_proc_addr(dev, #cmd)
    proc_table->AllocateCommandBuffers = VN_GDPA(dev, vkAllocateCommandBuffers);
    proc_table->AllocateDescriptorSets = VN_GDPA(dev, vkAllocateDescriptorSets);
    proc_table->AllocateMemory = VN_GDPA(dev, vkAllocateMemory);
@@ -291,6 +447,9 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->BindImageMemory2 =
       api_version >= VK_API_VERSION_1_1 ? VN_GDPA(dev, vkBindImageMemory2) :
       ext_table->KHR_bind_memory2 ? VN_GDPA(dev, vkBindImageMemory2KHR) :
+      NULL;
+   proc_table->BuildAccelerationStructuresKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkBuildAccelerationStructuresKHR) :
       NULL;
    proc_table->CmdBeginConditionalRenderingEXT =
       ext_table->EXT_conditional_rendering ? VN_GDPA(dev, vkCmdBeginConditionalRenderingEXT) :
@@ -312,8 +471,13 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->EXT_transform_feedback ? VN_GDPA(dev, vkCmdBeginTransformFeedbackEXT) :
       NULL;
    proc_table->CmdBindDescriptorSets = VN_GDPA(dev, vkCmdBindDescriptorSets);
+   proc_table->CmdBindDescriptorSets2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdBindDescriptorSets2) :
+      ext_table->KHR_maintenance6 ? VN_GDPA(dev, vkCmdBindDescriptorSets2KHR) :
+      NULL;
    proc_table->CmdBindIndexBuffer = VN_GDPA(dev, vkCmdBindIndexBuffer);
-   proc_table->CmdBindIndexBuffer2KHR =
+   proc_table->CmdBindIndexBuffer2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdBindIndexBuffer2) :
       ext_table->KHR_maintenance5 ? VN_GDPA(dev, vkCmdBindIndexBuffer2KHR) :
       NULL;
    proc_table->CmdBindPipeline = VN_GDPA(dev, vkCmdBindPipeline);
@@ -330,9 +494,21 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdBlitImage2) :
       ext_table->KHR_copy_commands2 ? VN_GDPA(dev, vkCmdBlitImage2KHR) :
       NULL;
+   proc_table->CmdBuildAccelerationStructuresIndirectKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdBuildAccelerationStructuresIndirectKHR) :
+      NULL;
+   proc_table->CmdBuildAccelerationStructuresKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdBuildAccelerationStructuresKHR) :
+      NULL;
    proc_table->CmdClearAttachments = VN_GDPA(dev, vkCmdClearAttachments);
    proc_table->CmdClearColorImage = VN_GDPA(dev, vkCmdClearColorImage);
    proc_table->CmdClearDepthStencilImage = VN_GDPA(dev, vkCmdClearDepthStencilImage);
+   proc_table->CmdCopyAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdCopyAccelerationStructureKHR) :
+      NULL;
+   proc_table->CmdCopyAccelerationStructureToMemoryKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdCopyAccelerationStructureToMemoryKHR) :
+      NULL;
    proc_table->CmdCopyBuffer = VN_GDPA(dev, vkCmdCopyBuffer);
    proc_table->CmdCopyBuffer2 =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdCopyBuffer2) :
@@ -352,6 +528,9 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->CmdCopyImageToBuffer2 =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdCopyImageToBuffer2) :
       ext_table->KHR_copy_commands2 ? VN_GDPA(dev, vkCmdCopyImageToBuffer2KHR) :
+      NULL;
+   proc_table->CmdCopyMemoryToAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdCopyMemoryToAccelerationStructureKHR) :
       NULL;
    proc_table->CmdCopyQueryPoolResults = VN_GDPA(dev, vkCmdCopyQueryPoolResults);
    proc_table->CmdDispatch = VN_GDPA(dev, vkCmdDispatch);
@@ -374,6 +553,15 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->CmdDrawIndirectCount =
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkCmdDrawIndirectCount) :
       ext_table->KHR_draw_indirect_count ? VN_GDPA(dev, vkCmdDrawIndirectCountKHR) :
+      NULL;
+   proc_table->CmdDrawMeshTasksEXT =
+      ext_table->EXT_mesh_shader ? VN_GDPA(dev, vkCmdDrawMeshTasksEXT) :
+      NULL;
+   proc_table->CmdDrawMeshTasksIndirectCountEXT =
+      ext_table->EXT_mesh_shader ? VN_GDPA(dev, vkCmdDrawMeshTasksIndirectCountEXT) :
+      NULL;
+   proc_table->CmdDrawMeshTasksIndirectEXT =
+      ext_table->EXT_mesh_shader ? VN_GDPA(dev, vkCmdDrawMeshTasksIndirectEXT) :
       NULL;
    proc_table->CmdDrawMultiEXT =
       ext_table->EXT_multi_draw ? VN_GDPA(dev, vkCmdDrawMultiEXT) :
@@ -413,11 +601,26 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->KHR_synchronization2 ? VN_GDPA(dev, vkCmdPipelineBarrier2KHR) :
       NULL;
    proc_table->CmdPushConstants = VN_GDPA(dev, vkCmdPushConstants);
-   proc_table->CmdPushDescriptorSetKHR =
+   proc_table->CmdPushConstants2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdPushConstants2) :
+      ext_table->KHR_maintenance6 ? VN_GDPA(dev, vkCmdPushConstants2KHR) :
+      NULL;
+   proc_table->CmdPushDescriptorSet =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdPushDescriptorSet) :
       ext_table->KHR_push_descriptor ? VN_GDPA(dev, vkCmdPushDescriptorSetKHR) :
       NULL;
-   proc_table->CmdPushDescriptorSetWithTemplateKHR =
+   proc_table->CmdPushDescriptorSet2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdPushDescriptorSet2) :
+      ext_table->KHR_maintenance6 ? VN_GDPA(dev, vkCmdPushDescriptorSet2KHR) :
+      NULL;
+   proc_table->CmdPushDescriptorSetWithTemplate =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdPushDescriptorSetWithTemplate) :
       ext_table->KHR_push_descriptor ? VN_GDPA(dev, vkCmdPushDescriptorSetWithTemplateKHR) :
+      ext_table->KHR_descriptor_update_template ? VN_GDPA(dev, vkCmdPushDescriptorSetWithTemplateKHR) :
+      NULL;
+   proc_table->CmdPushDescriptorSetWithTemplate2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdPushDescriptorSetWithTemplate2) :
+      ext_table->KHR_maintenance6 ? VN_GDPA(dev, vkCmdPushDescriptorSetWithTemplate2KHR) :
       NULL;
    proc_table->CmdResetEvent = VN_GDPA(dev, vkCmdResetEvent);
    proc_table->CmdResetEvent2 =
@@ -435,6 +638,9 @@ vn_util_init_device_proc_table(VkDevice dev,
       NULL;
    proc_table->CmdSetAlphaToOneEnableEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetAlphaToOneEnableEXT) :
+      NULL;
+   proc_table->CmdSetAttachmentFeedbackLoopEnableEXT =
+      ext_table->EXT_attachment_feedback_loop_dynamic_state ? VN_GDPA(dev, vkCmdSetAttachmentFeedbackLoopEnableEXT) :
       NULL;
    proc_table->CmdSetBlendConstants = VN_GDPA(dev, vkCmdSetBlendConstants);
    proc_table->CmdSetColorBlendAdvancedEXT =
@@ -460,6 +666,9 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->EXT_extended_dynamic_state ? VN_GDPA(dev, vkCmdSetCullModeEXT) :
       NULL;
    proc_table->CmdSetDepthBias = VN_GDPA(dev, vkCmdSetDepthBias);
+   proc_table->CmdSetDepthBias2EXT =
+      ext_table->EXT_depth_bias_control ? VN_GDPA(dev, vkCmdSetDepthBias2EXT) :
+      NULL;
    proc_table->CmdSetDepthBiasEnable =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdSetDepthBiasEnable) :
       ext_table->EXT_extended_dynamic_state2 ? VN_GDPA(dev, vkCmdSetDepthBiasEnableEXT) :
@@ -471,6 +680,9 @@ vn_util_init_device_proc_table(VkDevice dev,
       NULL;
    proc_table->CmdSetDepthClampEnableEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetDepthClampEnableEXT) :
+      NULL;
+   proc_table->CmdSetDepthClampRangeEXT =
+      ext_table->EXT_depth_clamp_control ? VN_GDPA(dev, vkCmdSetDepthClampRangeEXT) :
       NULL;
    proc_table->CmdSetDepthClipEnableEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetDepthClipEnableEXT) :
@@ -512,8 +724,10 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->CmdSetLineRasterizationModeEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetLineRasterizationModeEXT) :
       NULL;
-   proc_table->CmdSetLineStippleEXT =
+   proc_table->CmdSetLineStipple =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdSetLineStipple) :
       ext_table->EXT_line_rasterization ? VN_GDPA(dev, vkCmdSetLineStippleEXT) :
+      ext_table->KHR_line_rasterization ? VN_GDPA(dev, vkCmdSetLineStippleKHR) :
       NULL;
    proc_table->CmdSetLineStippleEnableEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetLineStippleEnableEXT) :
@@ -552,6 +766,20 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdSetRasterizerDiscardEnable) :
       ext_table->EXT_extended_dynamic_state2 ? VN_GDPA(dev, vkCmdSetRasterizerDiscardEnableEXT) :
       NULL;
+   proc_table->CmdSetRayTracingPipelineStackSizeKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkCmdSetRayTracingPipelineStackSizeKHR) :
+      NULL;
+   proc_table->CmdSetRenderingAttachmentLocations =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdSetRenderingAttachmentLocations) :
+      ext_table->KHR_dynamic_rendering_local_read ? VN_GDPA(dev, vkCmdSetRenderingAttachmentLocationsKHR) :
+      NULL;
+   proc_table->CmdSetRenderingInputAttachmentIndices =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCmdSetRenderingInputAttachmentIndices) :
+      ext_table->KHR_dynamic_rendering_local_read ? VN_GDPA(dev, vkCmdSetRenderingInputAttachmentIndicesKHR) :
+      NULL;
+   proc_table->CmdSetSampleLocationsEXT =
+      ext_table->EXT_sample_locations ? VN_GDPA(dev, vkCmdSetSampleLocationsEXT) :
+      NULL;
    proc_table->CmdSetSampleLocationsEnableEXT =
       ext_table->EXT_extended_dynamic_state3 ? VN_GDPA(dev, vkCmdSetSampleLocationsEnableEXT) :
       NULL;
@@ -585,21 +813,60 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdSetViewportWithCount) :
       ext_table->EXT_extended_dynamic_state ? VN_GDPA(dev, vkCmdSetViewportWithCountEXT) :
       NULL;
+   proc_table->CmdTraceRaysIndirect2KHR =
+      ext_table->KHR_ray_tracing_maintenance1 ? VN_GDPA(dev, vkCmdTraceRaysIndirect2KHR) :
+      NULL;
+   proc_table->CmdTraceRaysIndirectKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkCmdTraceRaysIndirectKHR) :
+      NULL;
+   proc_table->CmdTraceRaysKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkCmdTraceRaysKHR) :
+      NULL;
    proc_table->CmdUpdateBuffer = VN_GDPA(dev, vkCmdUpdateBuffer);
    proc_table->CmdWaitEvents = VN_GDPA(dev, vkCmdWaitEvents);
    proc_table->CmdWaitEvents2 =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdWaitEvents2) :
       ext_table->KHR_synchronization2 ? VN_GDPA(dev, vkCmdWaitEvents2KHR) :
       NULL;
+   proc_table->CmdWriteAccelerationStructuresPropertiesKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCmdWriteAccelerationStructuresPropertiesKHR) :
+      NULL;
    proc_table->CmdWriteTimestamp = VN_GDPA(dev, vkCmdWriteTimestamp);
    proc_table->CmdWriteTimestamp2 =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkCmdWriteTimestamp2) :
       ext_table->KHR_synchronization2 ? VN_GDPA(dev, vkCmdWriteTimestamp2KHR) :
       NULL;
+   proc_table->CopyAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCopyAccelerationStructureKHR) :
+      NULL;
+   proc_table->CopyAccelerationStructureToMemoryKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCopyAccelerationStructureToMemoryKHR) :
+      NULL;
+   proc_table->CopyImageToImage =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCopyImageToImage) :
+      ext_table->EXT_host_image_copy ? VN_GDPA(dev, vkCopyImageToImageEXT) :
+      NULL;
+   proc_table->CopyImageToMemory =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCopyImageToMemory) :
+      ext_table->EXT_host_image_copy ? VN_GDPA(dev, vkCopyImageToMemoryEXT) :
+      NULL;
+   proc_table->CopyMemoryToAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCopyMemoryToAccelerationStructureKHR) :
+      NULL;
+   proc_table->CopyMemoryToImage =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkCopyMemoryToImage) :
+      ext_table->EXT_host_image_copy ? VN_GDPA(dev, vkCopyMemoryToImageEXT) :
+      NULL;
+   proc_table->CreateAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkCreateAccelerationStructureKHR) :
+      NULL;
    proc_table->CreateBuffer = VN_GDPA(dev, vkCreateBuffer);
    proc_table->CreateBufferView = VN_GDPA(dev, vkCreateBufferView);
    proc_table->CreateCommandPool = VN_GDPA(dev, vkCreateCommandPool);
    proc_table->CreateComputePipelines = VN_GDPA(dev, vkCreateComputePipelines);
+   proc_table->CreateDeferredOperationKHR =
+      ext_table->KHR_deferred_host_operations ? VN_GDPA(dev, vkCreateDeferredOperationKHR) :
+      NULL;
    proc_table->CreateDescriptorPool = VN_GDPA(dev, vkCreateDescriptorPool);
    proc_table->CreateDescriptorSetLayout = VN_GDPA(dev, vkCreateDescriptorSetLayout);
    proc_table->CreateDescriptorUpdateTemplate =
@@ -619,6 +886,9 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->EXT_private_data ? VN_GDPA(dev, vkCreatePrivateDataSlotEXT) :
       NULL;
    proc_table->CreateQueryPool = VN_GDPA(dev, vkCreateQueryPool);
+   proc_table->CreateRayTracingPipelinesKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkCreateRayTracingPipelinesKHR) :
+      NULL;
    proc_table->CreateRenderPass = VN_GDPA(dev, vkCreateRenderPass);
    proc_table->CreateRenderPass2 =
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkCreateRenderPass2) :
@@ -631,9 +901,18 @@ vn_util_init_device_proc_table(VkDevice dev,
       NULL;
    proc_table->CreateSemaphore = VN_GDPA(dev, vkCreateSemaphore);
    proc_table->CreateShaderModule = VN_GDPA(dev, vkCreateShaderModule);
+   proc_table->DeferredOperationJoinKHR =
+      ext_table->KHR_deferred_host_operations ? VN_GDPA(dev, vkDeferredOperationJoinKHR) :
+      NULL;
+   proc_table->DestroyAccelerationStructureKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkDestroyAccelerationStructureKHR) :
+      NULL;
    proc_table->DestroyBuffer = VN_GDPA(dev, vkDestroyBuffer);
    proc_table->DestroyBufferView = VN_GDPA(dev, vkDestroyBufferView);
    proc_table->DestroyCommandPool = VN_GDPA(dev, vkDestroyCommandPool);
+   proc_table->DestroyDeferredOperationKHR =
+      ext_table->KHR_deferred_host_operations ? VN_GDPA(dev, vkDestroyDeferredOperationKHR) :
+      NULL;
    proc_table->DestroyDescriptorPool = VN_GDPA(dev, vkDestroyDescriptorPool);
    proc_table->DestroyDescriptorSetLayout = VN_GDPA(dev, vkDestroyDescriptorSetLayout);
    proc_table->DestroyDescriptorUpdateTemplate =
@@ -668,8 +947,15 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->FreeCommandBuffers = VN_GDPA(dev, vkFreeCommandBuffers);
    proc_table->FreeDescriptorSets = VN_GDPA(dev, vkFreeDescriptorSets);
    proc_table->FreeMemory = VN_GDPA(dev, vkFreeMemory);
+   proc_table->GetAccelerationStructureBuildSizesKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkGetAccelerationStructureBuildSizesKHR) :
+      NULL;
+   proc_table->GetAccelerationStructureDeviceAddressKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkGetAccelerationStructureDeviceAddressKHR) :
+      NULL;
    proc_table->GetBufferDeviceAddress =
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkGetBufferDeviceAddress) :
+      ext_table->EXT_buffer_device_address ? VN_GDPA(dev, vkGetBufferDeviceAddressEXT) :
       ext_table->KHR_buffer_device_address ? VN_GDPA(dev, vkGetBufferDeviceAddressKHR) :
       NULL;
    proc_table->GetBufferMemoryRequirements = VN_GDPA(dev, vkGetBufferMemoryRequirements);
@@ -681,12 +967,22 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkGetBufferOpaqueCaptureAddress) :
       ext_table->KHR_buffer_device_address ? VN_GDPA(dev, vkGetBufferOpaqueCaptureAddressKHR) :
       NULL;
-   proc_table->GetCalibratedTimestampsEXT =
+   proc_table->GetCalibratedTimestampsKHR =
       ext_table->EXT_calibrated_timestamps ? VN_GDPA(dev, vkGetCalibratedTimestampsEXT) :
+      ext_table->KHR_calibrated_timestamps ? VN_GDPA(dev, vkGetCalibratedTimestampsKHR) :
+      NULL;
+   proc_table->GetDeferredOperationMaxConcurrencyKHR =
+      ext_table->KHR_deferred_host_operations ? VN_GDPA(dev, vkGetDeferredOperationMaxConcurrencyKHR) :
+      NULL;
+   proc_table->GetDeferredOperationResultKHR =
+      ext_table->KHR_deferred_host_operations ? VN_GDPA(dev, vkGetDeferredOperationResultKHR) :
       NULL;
    proc_table->GetDescriptorSetLayoutSupport =
       api_version >= VK_API_VERSION_1_1 ? VN_GDPA(dev, vkGetDescriptorSetLayoutSupport) :
       ext_table->KHR_maintenance3 ? VN_GDPA(dev, vkGetDescriptorSetLayoutSupportKHR) :
+      NULL;
+   proc_table->GetDeviceAccelerationStructureCompatibilityKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkGetDeviceAccelerationStructureCompatibilityKHR) :
       NULL;
    proc_table->GetDeviceBufferMemoryRequirements =
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkGetDeviceBufferMemoryRequirements) :
@@ -704,7 +1000,8 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_3 ? VN_GDPA(dev, vkGetDeviceImageSparseMemoryRequirements) :
       ext_table->KHR_maintenance4 ? VN_GDPA(dev, vkGetDeviceImageSparseMemoryRequirementsKHR) :
       NULL;
-   proc_table->GetDeviceImageSubresourceLayoutKHR =
+   proc_table->GetDeviceImageSubresourceLayout =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkGetDeviceImageSubresourceLayout) :
       ext_table->KHR_maintenance5 ? VN_GDPA(dev, vkGetDeviceImageSubresourceLayoutKHR) :
       NULL;
    proc_table->GetDeviceMemoryCommitment = VN_GDPA(dev, vkGetDeviceMemoryCommitment);
@@ -712,7 +1009,6 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkGetDeviceMemoryOpaqueCaptureAddress) :
       ext_table->KHR_buffer_device_address ? VN_GDPA(dev, vkGetDeviceMemoryOpaqueCaptureAddressKHR) :
       NULL;
-   proc_table->GetDeviceProcAddr = VN_GDPA(dev, vkGetDeviceProcAddr);
    proc_table->GetDeviceQueue = VN_GDPA(dev, vkGetDeviceQueue);
    proc_table->GetDeviceQueue2 =
       api_version >= VK_API_VERSION_1_1 ? VN_GDPA(dev, vkGetDeviceQueue2) :
@@ -736,7 +1032,9 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->KHR_get_memory_requirements2 ? VN_GDPA(dev, vkGetImageSparseMemoryRequirements2KHR) :
       NULL;
    proc_table->GetImageSubresourceLayout = VN_GDPA(dev, vkGetImageSubresourceLayout);
-   proc_table->GetImageSubresourceLayout2KHR =
+   proc_table->GetImageSubresourceLayout2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkGetImageSubresourceLayout2) :
+      ext_table->EXT_host_image_copy ? VN_GDPA(dev, vkGetImageSubresourceLayout2EXT) :
       ext_table->KHR_maintenance5 ? VN_GDPA(dev, vkGetImageSubresourceLayout2KHR) :
       NULL;
    proc_table->GetMemoryFdKHR =
@@ -751,8 +1049,18 @@ vn_util_init_device_proc_table(VkDevice dev,
       ext_table->EXT_private_data ? VN_GDPA(dev, vkGetPrivateDataEXT) :
       NULL;
    proc_table->GetQueryPoolResults = VN_GDPA(dev, vkGetQueryPoolResults);
+   proc_table->GetRayTracingCaptureReplayShaderGroupHandlesKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkGetRayTracingCaptureReplayShaderGroupHandlesKHR) :
+      NULL;
+   proc_table->GetRayTracingShaderGroupHandlesKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkGetRayTracingShaderGroupHandlesKHR) :
+      NULL;
+   proc_table->GetRayTracingShaderGroupStackSizeKHR =
+      ext_table->KHR_ray_tracing_pipeline ? VN_GDPA(dev, vkGetRayTracingShaderGroupStackSizeKHR) :
+      NULL;
    proc_table->GetRenderAreaGranularity = VN_GDPA(dev, vkGetRenderAreaGranularity);
-   proc_table->GetRenderingAreaGranularityKHR =
+   proc_table->GetRenderingAreaGranularity =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkGetRenderingAreaGranularity) :
       ext_table->KHR_maintenance5 ? VN_GDPA(dev, vkGetRenderingAreaGranularityKHR) :
       NULL;
    proc_table->GetSemaphoreCounterValue =
@@ -770,6 +1078,10 @@ vn_util_init_device_proc_table(VkDevice dev,
       NULL;
    proc_table->InvalidateMappedMemoryRanges = VN_GDPA(dev, vkInvalidateMappedMemoryRanges);
    proc_table->MapMemory = VN_GDPA(dev, vkMapMemory);
+   proc_table->MapMemory2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkMapMemory2) :
+      ext_table->KHR_map_memory2 ? VN_GDPA(dev, vkMapMemory2KHR) :
+      NULL;
    proc_table->MergePipelineCaches = VN_GDPA(dev, vkMergePipelineCaches);
    proc_table->QueueBindSparse = VN_GDPA(dev, vkQueueBindSparse);
    proc_table->QueueSubmit = VN_GDPA(dev, vkQueueSubmit);
@@ -796,11 +1108,19 @@ vn_util_init_device_proc_table(VkDevice dev,
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkSignalSemaphore) :
       ext_table->KHR_timeline_semaphore ? VN_GDPA(dev, vkSignalSemaphoreKHR) :
       NULL;
+   proc_table->TransitionImageLayout =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkTransitionImageLayout) :
+      ext_table->EXT_host_image_copy ? VN_GDPA(dev, vkTransitionImageLayoutEXT) :
+      NULL;
    proc_table->TrimCommandPool =
       api_version >= VK_API_VERSION_1_1 ? VN_GDPA(dev, vkTrimCommandPool) :
       ext_table->KHR_maintenance1 ? VN_GDPA(dev, vkTrimCommandPoolKHR) :
       NULL;
    proc_table->UnmapMemory = VN_GDPA(dev, vkUnmapMemory);
+   proc_table->UnmapMemory2 =
+      api_version >= VK_API_VERSION_1_4 ? VN_GDPA(dev, vkUnmapMemory2) :
+      ext_table->KHR_map_memory2 ? VN_GDPA(dev, vkUnmapMemory2KHR) :
+      NULL;
    proc_table->UpdateDescriptorSetWithTemplate =
       api_version >= VK_API_VERSION_1_1 ? VN_GDPA(dev, vkUpdateDescriptorSetWithTemplate) :
       ext_table->KHR_descriptor_update_template ? VN_GDPA(dev, vkUpdateDescriptorSetWithTemplateKHR) :
@@ -810,6 +1130,9 @@ vn_util_init_device_proc_table(VkDevice dev,
    proc_table->WaitSemaphores =
       api_version >= VK_API_VERSION_1_2 ? VN_GDPA(dev, vkWaitSemaphores) :
       ext_table->KHR_timeline_semaphore ? VN_GDPA(dev, vkWaitSemaphoresKHR) :
+      NULL;
+   proc_table->WriteAccelerationStructuresPropertiesKHR =
+      ext_table->KHR_acceleration_structure ? VN_GDPA(dev, vkWriteAccelerationStructuresPropertiesKHR) :
       NULL;
 #undef VN_GDPA
 }

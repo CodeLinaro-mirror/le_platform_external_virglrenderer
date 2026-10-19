@@ -5,6 +5,8 @@ dEQP-GLES31.functional.compute.basic.empty
 KHR-GL43.texture_swizzle.smoke
 KHR-GL43.texture_swizzle.functional
 KHR-GL43.copy_image.functional
+KHR-GL43.packed_pixels.varied_rectangle.compressed_*
+spec@arb_compute_shader@local-id-explosion
 
 glx@.*
 
@@ -41,3 +43,8 @@ spec@glsl-4.*@*double*
 # uprev Mesa in Virglrenderer
 spec@egl_ext_protected_content@conformance
 
+# Crashed llvmpipe
+spec@glsl-1.50@execution@geometry@dynamic_input_array_index
+spec@glsl-1.50@execution@interface-blocks-api-access-members
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec4-index-wr-before-gs
+spec@glsl-1.50@execution@variable-indexing@vs-output-array-vec3-index-wr-before-gs

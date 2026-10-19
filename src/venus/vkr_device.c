@@ -67,11 +67,14 @@ vkr_device_init_proc_table(struct vkr_device *dev,
                            const char *const *exts,
                            uint32_t count)
 {
+   assert(dev->physical_device);
+   struct vn_physical_device_proc_table *vk = &dev->physical_device->proc_table;
+
    struct vn_info_extension_table ext_table;
    vkr_extension_table_init(&ext_table, exts, count);
 
-   vn_util_init_device_proc_table(dev->base.handle.device, api_version, &ext_table,
-                                  &dev->proc_table);
+   vn_util_init_device_proc_table(dev->base.handle.device, vk->GetDeviceProcAddr,
+                                  api_version, &ext_table, &dev->proc_table);
 }
 
 static void
@@ -82,6 +85,7 @@ vkr_dispatch_vkCreateDevice(struct vn_dispatch_context *dispatch,
 
    struct vkr_physical_device *physical_dev =
       vkr_physical_device_from_handle(args->physicalDevice);
+   struct vn_physical_device_proc_table *vk = &physical_dev->proc_table;
 
    /* there can be at most two members sharing a queueFamilyIndex (one
     * protected-capable, one not), in which case their summed queueCount must
@@ -159,8 +163,8 @@ vkr_dispatch_vkCreateDevice(struct vn_dispatch_context *dispatch,
    }
 
    vn_replace_vkCreateDevice_args_handle(args);
-   args->ret = vkCreateDevice(args->physicalDevice, args->pCreateInfo, NULL,
-                              &dev->base.handle.device);
+   args->ret = vk->CreateDevice(args->physicalDevice, args->pCreateInfo, NULL,
+                                &dev->base.handle.device);
    if (args->ret != VK_SUCCESS) {
       free(exts);
       free(dev);
@@ -178,7 +182,8 @@ vkr_dispatch_vkCreateDevice(struct vn_dispatch_context *dispatch,
    args->ret = vkr_device_create_queues(ctx, dev, args->pCreateInfo->queueCreateInfoCount,
                                         args->pCreateInfo->pQueueCreateInfos);
    if (args->ret != VK_SUCCESS) {
-      vkDestroyDevice(dev->base.handle.device, NULL);
+      struct vn_device_proc_table *vk = &dev->proc_table;
+      vk->DestroyDevice(dev->base.handle.device, NULL);
       free(dev);
       return;
    }
@@ -271,6 +276,10 @@ vkr_device_object_destroy(struct vkr_context *ctx,
          vk->DestroyDescriptorUpdateTemplate(
             device, obj->handle.descriptor_update_template, NULL);
          break;
+      case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+         vk->DestroyAccelerationStructureKHR(device, obj->handle.acceleration_structure,
+                                             NULL);
+         break;
       default:
          vkr_log("Unhandled vkr_object(%p) with VkObjectType(%u)", obj,
                  (uint32_t)obj->type);
@@ -308,8 +317,13 @@ vkr_device_destroy(struct vkr_context *ctx, struct vkr_device *dev, bool destroy
    if (!list_is_empty(&dev->objects))
       vkr_log("destroying device with valid objects");
 
-   /* only wait if on workder thread to prepare for vk obj cleanup */
-   if (ctx->on_worker_thread) {
+   /* Always wait for device idle before destroying objects.
+    * In process mode (on_worker_thread=false) this is still required so that
+    * the ICD can flush and release all GPU-side resources before the process
+    * exits.  Without this, the Adreno ICD leaves GPU memory allocated and the
+    * next vkCreateDevice call fails with VK_ERROR_OUT_OF_DEVICE_MEMORY.
+    */
+   {
       VkResult result = vk->DeviceWaitIdle(device);
       if (result != VK_SUCCESS)
          vkr_log("vkDeviceWaitIdle(%p) failed(%d)", dev, (int32_t)result);
@@ -332,8 +346,12 @@ vkr_device_destroy(struct vkr_context *ctx, struct vkr_device *dev, bool destroy
 
    mtx_destroy(&dev->free_sync_mutex);
 
-   if (destroy_vk || ctx->on_worker_thread)
-      vk->DestroyDevice(device, NULL);
+   /* Always call vkDestroyDevice so the ICD releases GPU memory back to the
+    * kernel driver.  In process mode destroy_vk and on_worker_thread are both
+    * false during context teardown, but the process is about to exit anyway so
+    * calling DestroyDevice is safe and necessary.
+    */
+   vk->DestroyDevice(device, NULL);
 
    list_del(&dev->base.track_head);
 
@@ -378,15 +396,15 @@ vkr_dispatch_vkDeviceWaitIdle(struct vn_dispatch_context *dispatch,
 }
 
 static void
-vkr_dispatch_vkGetCalibratedTimestampsEXT(
+vkr_dispatch_vkGetCalibratedTimestampsKHR(
    UNUSED struct vn_dispatch_context *ctx,
-   struct vn_command_vkGetCalibratedTimestampsEXT *args)
+   struct vn_command_vkGetCalibratedTimestampsKHR *args)
 {
    struct vkr_device *dev = vkr_device_from_handle(args->device);
    struct vn_device_proc_table *vk = &dev->proc_table;
 
-   vn_replace_vkGetCalibratedTimestampsEXT_args_handle(args);
-   args->ret = vk->GetCalibratedTimestampsEXT(args->device, args->timestampCount,
+   vn_replace_vkGetCalibratedTimestampsKHR_args_handle(args);
+   args->ret = vk->GetCalibratedTimestampsKHR(args->device, args->timestampCount,
                                               args->pTimestampInfos, args->pTimestamps,
                                               args->pMaxDeviation);
 }
@@ -402,6 +420,6 @@ vkr_context_init_device_dispatch(struct vkr_context *ctx)
    dispatch->dispatch_vkGetDeviceGroupPeerMemoryFeatures =
       vkr_dispatch_vkGetDeviceGroupPeerMemoryFeatures;
    dispatch->dispatch_vkDeviceWaitIdle = vkr_dispatch_vkDeviceWaitIdle;
-   dispatch->dispatch_vkGetCalibratedTimestampsEXT =
-      vkr_dispatch_vkGetCalibratedTimestampsEXT;
+   dispatch->dispatch_vkGetCalibratedTimestampsKHR =
+      vkr_dispatch_vkGetCalibratedTimestampsKHR;
 }

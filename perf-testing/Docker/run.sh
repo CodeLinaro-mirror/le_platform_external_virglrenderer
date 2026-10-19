@@ -15,6 +15,8 @@ debug=no
 trace=
 command=""
 prep_snapshot=
+vtest=no
+minigbm=true
 while [ -n "$1" ] ; do
     case "$1" in
 
@@ -48,6 +50,12 @@ while [ -n "$1" ] ; do
         --debug)
           debug=yes
           ;;
+
+        --vtest)
+           vtest=yes
+           minigbm=false
+           ;;
+
         *)
           echo "Unknown option '$1' given, run with option --help to see supported options"
           exit
@@ -65,10 +73,9 @@ pushd /mesa
 mkdir -p build
 
 if [ ! -f build/build.ninja ]; then 
-   meson build/ \
+   meson setup build/ \
       -Dprefix=/usr/local \
-      -Ddri-drivers=i965 \
-      -Dgallium-drivers=swrast,virgl,radeonsi,iris \
+      -Dgallium-drivers=softpipe,virgl,radeonsi,iris \
       -Dbuildtype=debugoptimized \
       -Dllvm=enabled \
       -Dglx=dri \
@@ -78,13 +85,12 @@ if [ ! -f build/build.ninja ]; then
       -Dgallium-va=disabled \
       -Dvulkan-drivers=[] \
       -Dvalgrind=disabled \
-      -Dtracing=perfetto \
+      -Dperfetto=true \
       -Dlibdir=lib
 else    
    pushd build
    meson configure \
       -Dprefix=/usr/local \
-      -Ddri-drivers=i965 \
       -Dgallium-drivers=swrast,virgl,radeonsi,iris \
       -Dbuildtype=debugoptimized \
       -Dllvm=enabled \
@@ -95,7 +101,7 @@ else
       -Dgallium-va=disabled \
       -Dvulkan-drivers=[] \
       -Dvalgrind=disabled \
-      -Dtracing=perfetto \
+      -Dperfetto=true \
       -Dlibdir=lib
    popd
 fi 
@@ -106,11 +112,11 @@ pushd /virglrenderer
 mkdir -p build
 
 if [ ! -f build/build.ninja ]; then 
-   meson build/ \
+   meson setup build/ \
       -Dprefix=/usr/local \
       -Dlibdir=lib \
       -Dplatforms=egl \
-      -Dminigbm_allocation=true \
+      -Dminigbm_allocation=$minigbm \
       -Dtracing=perfetto \
       -Dbuildtype=debugoptimized
 else    
@@ -119,7 +125,7 @@ else
       -Dprefix=/usr/local \
       -Dlibdir=lib \
       -Dplatforms=egl \
-      -Dminigbm_allocation=true \
+      -Dminigbm_allocation=$minigbm \
       -Dtracing=perfetto \
       -Dbuildtype=debugoptimized
    popd
@@ -128,7 +134,9 @@ ninja -C build/ install
 popd
 
 # Crosvm needs to link with minigbm, due to incompatible ABI
-export LD_PRELOAD=/usr/lib/libminigbm.so.1.0.0
+if [  "x$minigbm" == "xtrue" ] ; then
+    export LD_PRELOAD=/usr/lib/libminigbm.so.1.0.0
+fi
 
 export PATH="/apitrace/build:$PATH"
 export PATH="/waffle/build/bin:$PATH"
@@ -173,8 +181,10 @@ if [ "x$perfetto_loops" != "x0" ]; then
 fi
 
 
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-echo 1 > /proc/sys/net/ipv4/ip_forward
+if [ "x$vtest" != "xyes" ]; then
+   iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+   echo 1 > /proc/sys/net/ipv4/ip_forward
+fi
 
 
 # store name of trace to be replayed so the guest can obtain the name 
@@ -184,6 +194,7 @@ echo $command > /traces-db/command
 trace_base=$(basename $trace_no_ext)
 guest_perf="$datadir/${trace_base}-guest.perfetto"
 host_perf="$datadir/${trace_base}-host.perfetto"
+vtest_perf="$datadir/${trace_base}-vtest.perfetto"
 summary_perf="$datadir/${trace_base}-summary.perfetto"
 
 mkdir -p $datadir
@@ -197,7 +208,25 @@ if [ "x$debug" = "xyes" ]; then
 fi
 
 
-if [ -e /wd/crosvm-debug.cmd ]; then
+if [ "x$vtest" == "xyes" ]; then
+    /usr/local/bin/virgl_test_server --use-egl-surfaceless &
+    sleep 1
+
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export GALLIUM_DRIVER="virpipe"
+
+    /perfetto/out/dist/perfetto --attach=mykey --stop
+    sleep 1
+    /perfetto/out/dist/perfetto --txt -c /usr/local/perfetto-vtest.cfg -o /tmp/perfetto-vtest.trace --detach=mykey
+    sleep 1
+
+    echo "Replaying for Perfetto:"
+    eglretrace --benchmark --singlethread --loop=$perfetto_loops $wait_after_frame --headless "/traces-db/${trace}"
+
+    unset LIBGL_ALWAYS_SOFTWARE
+    unset GALLIUM_DRIVER
+    killall virgl_test_server
+elif [ -e /wd/crosvm-debug.cmd ]; then
     gdb -x /wd/crosvm-debug.cmd
 else
     crosvm run \
@@ -230,7 +259,12 @@ if [ "x$perfetto_loops" != "x0" ]; then
     kill `pidof traced_probes` || echo "traced_probes was not running (anymore)"
     kill `pidof traced` || echo "traced was not running (anymore="
 
-    /usr/local/merge_traces.py "$host_perf" "$guest_perf" "$summary_perf"
+    if [ "x$vtest" == "xyes" ]; then
+        mv /tmp/perfetto-vtest.trace "$vtest_perf"
+        chmod a+rw "$vtest_perf"
+    else
+        /usr/local/merge_traces.py "$host_perf" "$guest_perf" "$summary_perf"
+    fi
 fi
 
 sleep 1

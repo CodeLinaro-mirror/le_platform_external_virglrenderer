@@ -22,6 +22,7 @@
 #
 
 vtest_sources = [
+   'threadpool.c',
    'util.c',
    'util.h',
    'vtest_shm.c',
@@ -32,10 +33,22 @@ vtest_sources = [
    'vtest.h'
 ]
 
+vtest_depends = [
+   libvirglrenderer_dep,
+   gallium_dep,
+   thread_dep,
+   libdrm_dep,
+   drm_uapi_dep,
+   mesa_dep,
+]
+
+if with_tracing == 'percetto'
+   vtest_depends += [percetto_dep]
+endif
 libvtest = static_library(
    'vtest',
    vtest_sources,
-   dependencies : [libvirglrenderer_dep, gallium_dep],
+   dependencies : vtest_depends,
 )
 
 libvtest_dep = declare_dependency(
@@ -67,7 +80,8 @@ if with_fuzzer
 
    vtest_obj = libvtest.extract_objects(['util.c',
                                          'vtest_shm.c',
-                                         'vtest_renderer.c'
+                                         'vtest_renderer.c',
+                                         'threadpool.c',
                                         ])
 
    vtest_fuzzer = executable(
